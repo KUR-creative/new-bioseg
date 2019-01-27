@@ -91,7 +91,7 @@ def make_new_path(dst_dir_path,old_path,
 def save_imgs(origin_path_seq, img_seq, dst_dir_path):
     for imgpath, img in zip(origin_path_seq, img_seq):
         img_dstpath = make_new_path(dst_dir_path,imgpath)
-        print(img_dstpath)
+        #print(img_dstpath)
         cv2.imwrite(img_dstpath, bgr_uint8(img))
 
 def make_result_paths(img_paths, result_dir):
@@ -187,6 +187,7 @@ def eval_and_save(model_path):
 
     result_yml_name = 'result_' + time + '.yml'
     result_dict = dict(results, **dataset_dict)
+    result_dict.pop('origin_map',None)
 
     with open(result_yml_name,'w') as f:
         f.write(yaml.dump(result_dict))
@@ -194,4 +195,5 @@ def eval_and_save(model_path):
     print('result images and ' + result_yml_name + ' are saved successfully!')
 
 if __name__ == '__main__':
-    eval_and_save('tmp_model_2019-01-28_01_39_33.h5')
+    pass
+    #eval_and_save('dataset_2019-01-28_03_11_43.h5')

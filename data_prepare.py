@@ -4,7 +4,7 @@ from itertools import cycle, islice
 from utils import load_imgs, splited_paths, file_paths, human_sorted, bgr_float32
 from utils import now_time_str
 from utils import categorize, decategorize, unique_colors
-from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.callbacks import ModelCheckpoint, TensorBoard, ReduceLROnPlateau
 
 #-------- data augmentation --------
 #def random_crop
@@ -187,15 +187,16 @@ model_checkpoint = ModelCheckpoint(model_name, monitor='val_loss',
 tboard = TensorBoard(log_dir='model_logs/'+start_time+'_logs',
                      batch_size=BATCH_SIZE, write_graph=False)
 
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=12)# NEW
 # train model(encoder only)
-model.fit_generator(train_gen, steps_per_epoch=100, epochs=10,
+model.fit_generator(train_gen, steps_per_epoch=100, epochs=30, #10 (dataset_2019-01-28_03_11_43)
                     validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
                     callbacks=[model_checkpoint,tboard])
 set_trainable(model)
 # train model(whole network)
-model.fit_generator(train_gen, steps_per_epoch=100, epochs=90,
+model.fit_generator(train_gen, steps_per_epoch=100, epochs=270, #90 (dataset_2019-01-28_03_11_43)
                     validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
-                    callbacks=[model_checkpoint,tboard])
+                    callbacks=[model_checkpoint,tboard,reduce_lr])
 
 print('Model ' + model_name + ' is trained successfully!')
 
