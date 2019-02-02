@@ -202,7 +202,7 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         cv2.imwrite(path, uint8img)
     print('----')
     for path, img, ans in tqdm(zip(test_result_paths, test_imgs,test_masks),
-                               total=len(valid_imgs)): 
+                               total=len(test_imgs)): 
         result, score = evaluate(model, img, ans, modulo)
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
