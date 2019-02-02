@@ -14,6 +14,7 @@ from segmentation_models.utils import set_trainable
 from metrics import jaccard_coefficient, weighted_categorical_crossentropy
 
 import evaluator
+import my_model
 
 #-------- data augmentation --------
 #def random_crop
@@ -103,6 +104,8 @@ def main(experiment_yml_path):
     NUM_EPOCHS = config['NUM_EPOCHS']
     STEPS_PER_EPOCH = config['BATCH_SIZE']
     DATASET_YML = config['DATASET_YML']
+    MODEL = config['MODEL']
+    NUM_MAXPOOL = config['NUM_MAXPOOL']
 
     aug,img_aug,mask_aug = None,None,None
     aug = augmenter(BATCH_SIZE, IMG_SIZE, 1, 
@@ -118,6 +121,8 @@ def main(experiment_yml_path):
 
     if DATASET_YML is None: 
         # save DATASET_YML
+        #NOTE: You must use ^ this paths to evaluate model.
+        # dataset is randomly splited per trainings..
         (train_img_paths, train_mask_paths, 
          valid_img_paths, valid_mask_paths, 
          test_img_paths, test_mask_paths) \
@@ -148,8 +153,6 @@ def main(experiment_yml_path):
         test_img_paths   = dataset['test_imgs']
         test_mask_paths  = dataset['test_masks']
 
-    #NOTE: You must use ^ this paths to evaluate model.
-    # dataset is randomly splited per trainings..
     train_imgs = list(load_imgs(train_img_paths))
     train_masks= list(map(lambda img: categorize(img)[0],load_imgs(train_mask_paths)))
     valid_imgs = list(load_imgs(valid_img_paths))
@@ -173,6 +176,7 @@ def main(experiment_yml_path):
     test_gen  = batch_gen(test_imgs, test_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
 
     # DEBUG
+    '''
     mask= bgr_float32(cv2.imread(train_mask_paths[0]))
     categorized_mask,origin_map = categorize(mask)
     for ims,mas in valid_gen:
@@ -187,11 +191,13 @@ def main(experiment_yml_path):
             cv2.imshow('m',ma)
             cv2.imshow('dm',de); cv2.waitKey(0)
     '''
-    '''
 
     # prepare model
-    model = Unet(backbone_name='resnet34', encoder_weights='imagenet',
-                 classes=3, activation='softmax',freeze_encoder=True)
+    if MODEL == 'resnet34':
+        model = Unet(backbone_name='resnet34', encoder_weights='imagenet',
+                     classes=3, activation='softmax',freeze_encoder=True)
+    elif MODEL == 'naive_unet':
+        model = my_model.unet((IMG_SIZE,IMG_SIZE,3), num_maxpool=NUM_MAXPOOL)
     model.compile(
         optimizer='Adam', 
         loss=weighted_categorical_crossentropy(weights),#'binary_crossentropy', 
@@ -199,28 +205,15 @@ def main(experiment_yml_path):
     )
 
 
-    #from keras.utils import plot_model
-    model_name = 'tmp_model_' + start_time + '.h5'
+    model_name = experiment_name + '_' + start_time + '.h5'
 
-    mask = bgr_float32(cv2.imread(train_mask_paths[0]))
-    categorized_mask,origin_map = categorize(mask)
-    print(origin_map)
-    dataset_name = 'dataset_' + start_time + '.yml'
-    dataset_dict = {
-        'train_imgs':train_img_paths, 'train_masks':train_mask_paths,
-        'valid_imgs':valid_img_paths, 'valid_masks':valid_mask_paths,
-        'test_imgs':test_img_paths, 'test_masks':test_mask_paths,
-        'origin_map':origin_map
-    }
-    with open(dataset_name,'w') as f:
-        f.write(yaml.dump(dataset_dict))
-    #NOTE: You must use this ^ paths to evaluate model.
-
-    #plot_model(model, to_file='pt_model.png', show_shapes=True)
+    from keras.utils import plot_model
+    plot_model(model, to_file=model_name+'.png', show_shapes=True)
+    #exit('not now')
 
     model_checkpoint = ModelCheckpoint(model_name, monitor='val_loss',
                                        verbose=1, save_best_only=True)
-    tboard = TensorBoard(log_dir='model_logs/'+start_time+'_logs',
+    tboard = TensorBoard(log_dir='model_logs/'+model_name+'_logs',
                          batch_size=BATCH_SIZE, write_graph=False)
 
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=12)# NEW
