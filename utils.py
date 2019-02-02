@@ -68,7 +68,8 @@ def categorize(img):
         category = to_categorical(i, n_classes)
         masks = (img_b == b) & (img_g == g) & (img_r == r) # if [0,0,0]
         ret_img[masks] = category
-        origin_map[tuple(category)] = [b,g,r]
+        origin_map[tuple(map(np.asscalar,category))] \
+            = [np.asscalar(b), np.asscalar(g), np.asscalar(r)]
     return ret_img, origin_map
 
 def decategorize(categorized, origin_map):

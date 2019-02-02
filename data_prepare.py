@@ -90,6 +90,8 @@ def bgr_weights(masks):
 
 
 def main(experiment_yml_path):
+    start_time = now_time_str()
+
     with open(experiment_yml_path,'r') as f:
         print('now: ', experiment_yml_path)
         config = yaml.load(f)
@@ -101,51 +103,50 @@ def main(experiment_yml_path):
     NUM_EPOCHS = config['NUM_EPOCHS']
     STEPS_PER_EPOCH = config['BATCH_SIZE']
     DATASET_YML = config['DATASET_YML']
-    #exit('not now')
-    '''
-    BATCH_SIZE = 8
-    IMG_SIZE = 256
-    NUM_CLASSES = 3
-    STEPS_PER_EPOCH = 2
-    NUM_EPOCHS = 1
-    '''
 
     aug,img_aug,mask_aug = None,None,None
     aug = augmenter(BATCH_SIZE, IMG_SIZE, 1, 
             crop_before_augs=[
               iaa.Fliplr(0.5),
               iaa.Flipud(0.5),
-              iaa.Affine(rotate=(-180,180),mode='reflect'),
+              iaa.Affine(rotate=(-90,90),mode='reflect'),
             ],
             crop_after_augs=[
               iaa.ElasticTransformation(alpha=(100,200),sigma=14,mode='reflect'),
             ]
           )
-    if DATASET_YML is None:
+
+    if DATASET_YML is None: 
+        # save DATASET_YML
         (train_img_paths, train_mask_paths, 
          valid_img_paths, valid_mask_paths, 
          test_img_paths, test_mask_paths) \
             = splited_paths(human_sorted(file_paths('./boundary_data190125/image/')),
                             human_sorted(file_paths('./boundary_data190125/label/')))
-        print('train_img_paths: ['); print(*train_img_paths, ']',sep=',\n')
-        print('train_mask_paths: [');print(*train_mask_paths,']',sep=',\n')
-
-        print('valid_img_paths: ['); print(*valid_img_paths, ']',sep=',\n')
-        print('valid_mask_paths: [');print(*valid_mask_paths,']',sep=',\n')
-
-        print('test_img_paths: [');  print(*test_img_paths, ']',sep=',\n')
-        print('test_mask_paths: ['); print(*test_mask_paths,']',sep=',\n')
+        mask = bgr_float32(cv2.imread(train_mask_paths[0]))
+        categorized_mask,origin_map = categorize(mask)
+        print(origin_map)
+        dataset_name = 'challenge_data_' + start_time + '.yml'
+        dataset_dict = {
+            'train_imgs':train_img_paths, 'train_masks':train_mask_paths,
+            'valid_imgs':valid_img_paths, 'valid_masks':valid_mask_paths,
+            'test_imgs':test_img_paths, 'test_masks':test_mask_paths,
+            'origin_map':origin_map
+        }
+        with open(dataset_name,'w') as f:
+            f.write(yaml.dump(dataset_dict))
         exit('not implemented')
     else:
+        # load DATASET_YML
         with open(DATASET_YML,'r') as f:
             print('now: ', DATASET_YML)
             dataset = yaml.load(f)
-        train_img_paths  = dataset['train_img_paths']
-        train_mask_paths = dataset['train_mask_paths']
-        valid_img_paths  = dataset['valid_img_paths']
-        valid_mask_paths = dataset['valid_mask_paths']
-        test_img_paths   = dataset['test_img_paths']
-        test_mask_paths  = dataset['test_mask_paths']
+        train_img_paths  = dataset['train_imgs']
+        train_mask_paths = dataset['train_masks']
+        valid_img_paths  = dataset['valid_imgs']
+        valid_mask_paths = dataset['valid_masks']
+        test_img_paths   = dataset['test_imgs']
+        test_mask_paths  = dataset['test_masks']
 
     #NOTE: You must use ^ this paths to evaluate model.
     # dataset is randomly splited per trainings..
@@ -174,9 +175,9 @@ def main(experiment_yml_path):
     # DEBUG
     mask= bgr_float32(cv2.imread(train_mask_paths[0]))
     categorized_mask,origin_map = categorize(mask)
-    print(origin_map)
-    for ims,mas in train_gen:
+    for ims,mas in valid_gen:
         for im,ma in zip(ims,mas):
+            print(origin_map)
             print('ma',np.unique(ma.reshape(-1,ma.shape[2]), axis=0))
             ma = np.around(ma)
             print('rounded ma',np.unique(ma.reshape(-1,ma.shape[2]), axis=0))
@@ -199,7 +200,6 @@ def main(experiment_yml_path):
 
 
     #from keras.utils import plot_model
-    start_time = now_time_str()
     model_name = 'tmp_model_' + start_time + '.h5'
 
     mask = bgr_float32(cv2.imread(train_mask_paths[0]))
