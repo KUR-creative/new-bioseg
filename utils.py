@@ -1,8 +1,25 @@
 import os, re
 import cv2
 import numpy as np
+import time
 from datetime import datetime
 #-------- utils --------
+class ElapsedTimer(object):
+    def __init__(self,msg='Elapsed'):
+        self.start_time = time.time()
+        self.msg = msg
+    def elapsed(self,sec):
+        if sec < 60:
+            return str(sec) + " sec"
+        elif sec < (60 * 60):
+            return str(sec / 60) + " min"
+        else:
+            return str(sec / (60 * 60)) + " hr"
+    def elapsed_time(self):
+        print(self.msg + ": %s " % self.elapsed(time.time() - self.start_time),
+              flush=True)
+        return (self.msg + ": %s " % self.elapsed(time.time() - self.start_time))
+
 def now_time_str():
     return datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
 

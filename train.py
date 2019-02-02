@@ -7,10 +7,11 @@ import cv2
 import numpy as np
 from imgaug import augmenters as iaa
 from itertools import cycle, islice
-from utils import load_imgs, splited_paths, file_paths, human_sorted, bgr_float32, filename_ext
-from utils import now_time_str
-from utils import categorize, decategorize, unique_colors
 from keras.callbacks import ModelCheckpoint, TensorBoard, ReduceLROnPlateau
+
+from utils import human_sorted, splited_paths, file_paths, filename_ext
+from utils import ElapsedTimer, now_time_str
+from utils import load_imgs, bgr_float32, categorize, decategorize, unique_colors
 
 from segmentation_models import Unet
 from segmentation_models.utils import set_trainable
@@ -103,11 +104,13 @@ def main(experiment_yml_path):
     experiment_name = filename_ext(experiment_yml_path).name
     print(experiment_name, '\n', config)
 
+    train_timer = ElapsedTimer(experiment_yml_path + ' training')
+    #-------------------------------------------------------------------------------------------------
     NUM_CLASSES = 3
     IMG_SIZE = config['IMG_SIZE']
     BATCH_SIZE = config['BATCH_SIZE']
     NUM_EPOCHS = config['NUM_EPOCHS']
-    STEPS_PER_EPOCH = config['BATCH_SIZE']
+    STEPS_PER_EPOCH = config['STEPS_PER_EPOCH']
     DATASET_YML = config['DATASET_YML']
     MODEL = config['MODEL']
     NUM_MAXPOOL = config['NUM_MAXPOOL']
@@ -255,7 +258,13 @@ def main(experiment_yml_path):
 
     print('Model ' + model_name + ' is trained successfully!')
 
+    #-------------------------------------------------------------------------------------------------
+    train_time_str = train_timer.elapsed_time()
+
+    eval_timer = ElapsedTimer(experiment_yml_path + ' evaluation')
     evaluator.eval_and_save(model_path, DATASET_YML, experiment_yml_path)
+    eval_time_str = eval_timer.elapsed_time()
+
         #train_imgs, train_masks, valid_imgs, valid_masks, test_imgs, test_masks)
 
 import sys
