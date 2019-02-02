@@ -1,3 +1,5 @@
+import os
+from os.path import join as pjoin
 import yaml
 import cv2
 import numpy as np
@@ -98,6 +100,7 @@ def main(experiment_yml_path):
         config = yaml.load(f)
     experiment_name = filename_ext(experiment_yml_path).name
     print(experiment_name, '\n', config)
+
     NUM_CLASSES = 3
     IMG_SIZE = config['IMG_SIZE']
     BATCH_SIZE = config['BATCH_SIZE']
@@ -214,13 +217,16 @@ def main(experiment_yml_path):
     )
 
 
-    model_name = experiment_name + '_' + start_time + '.h5'
+    model_name = experiment_name + '_' + start_time 
+    result_dir = model_name
+    os.makedirs(result_dir)
 
     from keras.utils import plot_model
-    plot_model(model, to_file=model_name+'.png', show_shapes=True)
-    #exit('not now')
+    plot_model(model, to_file=pjoin(result_dir,model_name+'.png'), 
+               show_shapes=True)
 
-    model_checkpoint = ModelCheckpoint(model_name, monitor='val_loss',
+    model_path = pjoin(result_dir,model_name) + '.h5'
+    model_checkpoint = ModelCheckpoint(model_path, monitor='val_loss',
                                        verbose=1, save_best_only=True)
     tboard = TensorBoard(log_dir='model_logs/'+model_name+'_logs',
                          batch_size=BATCH_SIZE, write_graph=False)
@@ -245,7 +251,7 @@ def main(experiment_yml_path):
 
     print('Model ' + model_name + ' is trained successfully!')
 
-    evaluator.eval_and_save(model_name, DATASET_YML, experiment_yml_path)
+    evaluator.eval_and_save(model_path, DATASET_YML, experiment_yml_path)
         #train_imgs, train_masks, valid_imgs, valid_masks, test_imgs, test_masks)
 
 

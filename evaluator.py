@@ -135,11 +135,11 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
     origin_map = dataset_dict['origin_map']
 
     model_name = filename_ext(model_path).name
-    result_dirpath = model_name
-    print(result_dirpath)
-    train_result_dir = os.path.join(result_dirpath,'train')
-    valid_result_dir = os.path.join(result_dirpath,'valid')
-    test_result_dir  = os.path.join(result_dirpath,'test')
+    result_dir = model_name
+    print(result_dir)
+    train_result_dir = os.path.join(result_dir,'train')
+    valid_result_dir = os.path.join(result_dir,'valid')
+    test_result_dir  = os.path.join(result_dir,'test')
 
     #---- make result paths ----
     train_result_paths = make_result_paths(train_img_paths,train_result_dir)
@@ -147,9 +147,9 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
     test_result_paths  = make_result_paths(test_img_paths,test_result_dir)
 
     #---- save results ----
-    os.makedirs(os.path.join(result_dirpath,'train'))
-    os.makedirs(os.path.join(result_dirpath,'valid'))
-    os.makedirs(os.path.join(result_dirpath,'test'))
+    os.makedirs(os.path.join(result_dir,'train'))
+    os.makedirs(os.path.join(result_dir,'valid'))
+    os.makedirs(os.path.join(result_dir,'test'))
 
     '''
     # why it didn't work? why so slow???
@@ -210,7 +210,7 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         results['test_ious'].append( np.asscalar(np.mean(score)) )
         cv2.imwrite(path, uint8img)
 
-    result_yml_name = model_name + '.yml'
+    result_yml_name = os.path.join(result_dir,model_name) + '.yml'
     result_dict = dict(results, **dataset_dict)
 
     with open(result_yml_name,'w') as f:
