@@ -111,11 +111,14 @@ def evaluate(model, img, ans, modulo=32):
 from keras.models import load_model
 import yaml
 import os
-def eval_and_save(model_path):
-    #model_path = './tmp_model_2019-01-28_00_52_40.h5'
-
-    time = filename_ext(model_path).name[10:]
-    dataset_dict_path = 'dataset_' + time + '.yml'
+def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
+                  train_imgs=None, train_masks=None,
+                  valid_imgs=None, valid_masks=None,
+                  test_imgs=None, test_masks=None):
+    with open(experiment_yml_path,'r') as f:
+        config = yaml.load(f)
+    modulo = 2**(config['NUM_MAXPOOL'])
+    print('modulo =',modulo)
     with open(dataset_dict_path,'r') as f:
         print(dataset_dict_path)
         dataset_dict = yaml.load(f)
@@ -128,7 +131,8 @@ def eval_and_save(model_path):
     test_mask_paths = dataset_dict['test_masks']
     origin_map = dataset_dict['origin_map']
 
-    result_dirpath = filename_ext(model_path).name
+    model_name = filename_ext(model_path).name
+    result_dirpath = model_name
     print(result_dirpath)
     train_result_dir = os.path.join(result_dirpath,'train')
     valid_result_dir = os.path.join(result_dirpath,'valid')
@@ -144,12 +148,13 @@ def eval_and_save(model_path):
     os.makedirs(os.path.join(result_dirpath,'valid'))
     os.makedirs(os.path.join(result_dirpath,'test'))
 
-    train_imgs = list(load_imgs(train_img_paths))
-    train_masks= list(load_imgs(train_mask_paths))
-    valid_imgs = list(load_imgs(valid_img_paths))
-    valid_masks= list(load_imgs(valid_mask_paths))
-    test_imgs  = list(load_imgs(test_img_paths))
-    test_masks = list(load_imgs(test_mask_paths))
+    if train_imgs is None:
+        train_imgs = list(load_imgs(train_img_paths))
+        train_masks= list(load_imgs(train_mask_paths))
+        valid_imgs = list(load_imgs(valid_img_paths))
+        valid_masks= list(load_imgs(valid_mask_paths))
+        test_imgs  = list(load_imgs(test_img_paths))
+        test_masks = list(load_imgs(test_mask_paths))
 
     save_imgs(train_img_paths, train_imgs, train_result_dir)
     save_imgs(train_mask_paths,train_masks,train_result_dir)
@@ -158,36 +163,36 @@ def eval_and_save(model_path):
     save_imgs(test_img_paths, test_imgs, test_result_dir)
     save_imgs(test_mask_paths,test_masks,test_result_dir)
 
-    results = {'train_ious':[], 'valid_ious':[], 'test_ious':[],}
+    results = {'train_ious':[], 'valid_ious':[], 'test_ious':[],
+            'mean_train_iou':0, 'mean_valid_iou':0, 'mean_test_iou':0}
     model = load_model(model_path, compile=False)
     # NOTE: because of keras bug, 'compile=False' is mendatory.
     for path, img, ans in zip(train_result_paths, train_imgs, train_masks): 
-        result, score = evaluate(model, img, ans)
+        result, score = evaluate(model, img, ans, modulo)
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
-        print(score,path)
+        #print(score,path)
         results['train_ious'].append( np.asscalar(np.mean(score)) )
         cv2.imwrite(path, uint8img)
     print('----')
     for path, img, ans in zip(valid_result_paths, valid_imgs, valid_masks): 
-        result, score = evaluate(model, img, ans)
+        result, score = evaluate(model, img, ans, modulo)
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
-        print(score,path)
+        #print(score,path)
         results['valid_ious'].append( np.asscalar(np.mean(score)) )
         cv2.imwrite(path, uint8img)
     print('----')
     for path, img, ans in zip(test_result_paths, test_imgs,test_masks): 
-        result, score = evaluate(model, img, ans)
+        result, score = evaluate(model, img, ans, modulo)
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
-        print(score,path)
+        #print(score,path)
         results['test_ious'].append( np.asscalar(np.mean(score)) )
         cv2.imwrite(path, uint8img)
 
-    result_yml_name = 'result_' + time + '.yml'
+    result_yml_name = model_name + '.yml'
     result_dict = dict(results, **dataset_dict)
-    result_dict.pop('origin_map',None)
 
     with open(result_yml_name,'w') as f:
         f.write(yaml.dump(result_dict))

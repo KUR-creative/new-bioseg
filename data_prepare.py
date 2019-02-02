@@ -107,6 +107,8 @@ def main(experiment_yml_path):
     MODEL = config['MODEL']
     NUM_MAXPOOL = config['NUM_MAXPOOL']
     TRANSFER_LEARNING = config['TRANSFER_LEARNING']
+    NUM_FILTERS = config['NUM_FILTERS']
+    OPTIMIZER = config['OPTIMIZER']
 
     aug,img_aug,mask_aug = None,None,None
     aug = augmenter(BATCH_SIZE, IMG_SIZE, 1, 
@@ -160,6 +162,7 @@ def main(experiment_yml_path):
     valid_masks= list(map(lambda img: categorize(img)[0],load_imgs(valid_mask_paths)))
     test_imgs  = list(load_imgs(test_img_paths))
     test_masks = list(map(lambda img: categorize(img)[0],load_imgs(test_mask_paths)))
+    #print('-------->', len(valid_imgs))
 
     train_weights = bgr_weights(train_masks)
     valid_weights = bgr_weights(valid_masks)
@@ -198,11 +201,14 @@ def main(experiment_yml_path):
         model = Unet(backbone_name='resnet34', encoder_weights='imagenet',
                      classes=3, activation='softmax',freeze_encoder=True)
     elif MODEL == 'naive_unet':
-        model = my_model.unet((IMG_SIZE,IMG_SIZE,3), num_maxpool=NUM_MAXPOOL)
+        model = my_model.unet(num_classes=NUM_CLASSES,
+                              num_maxpool=NUM_MAXPOOL,
+                              num_filters=NUM_FILTERS)
     model.compile(
-        optimizer='Adam', 
-        loss=weighted_categorical_crossentropy(weights),#'binary_crossentropy', 
-        metrics=[jaccard_coefficient]#['binary_accuracy']
+        optimizer=OPTIMIZER,
+        #optimizer='Adam', 
+        loss=weighted_categorical_crossentropy(weights),
+        metrics=[jaccard_coefficient]
     )
 
 
@@ -230,13 +236,14 @@ def main(experiment_yml_path):
                             callbacks=[model_checkpoint,tboard,reduce_lr])
     else:
         model.fit_generator(train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #90 (dataset_2019-01-28_03_11_43)
-                            validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
+                            validation_data=valid_gen, validation_steps=(32 // BATCH_SIZE),# 30 all imgs.
                             callbacks=[model_checkpoint,tboard,reduce_lr])
 
 
     print('Model ' + model_name + ' is trained successfully!')
 
-    evaluator.eval_and_save(model_name)
+    evaluator.eval_and_save(model_name, DATASET_YML, experiment_yml_path,
+        train_imgs, train_masks, valid_imgs, valid_masks, test_imgs, test_masks)
 
 
 if __name__ == '__main__':

@@ -34,9 +34,9 @@ def up_block(from_horizon, upward, cnum, kernel_init, filter_vec=(3,3,1),
             kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
     return merged
 
-def unet(input_size = (256,256,1), pretrained_weights = None,
+def unet(input_size = (None,None,3), pretrained_weights = None,
          kernel_init='he_normal', 
-         num_classes=4, last_activation='sigmoid',
+         num_classes=3, last_activation='softmax',
          num_filters=64, num_maxpool = 4, filter_vec=(3,3,1),
          kernel_regularizer=None, bias_regularizer=None,
          dropout=None):
