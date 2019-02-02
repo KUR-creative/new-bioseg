@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from sklearn.metrics import confusion_matrix 
 import traceback
 import numpy as np
@@ -88,9 +89,11 @@ def make_new_path(dst_dir_path,old_path,
     img_name_ext = new_path_rule(name,ext)
     return os.path.join(dst_dir_path,img_name_ext)
 
-def save_imgs(origin_path_seq, img_seq, dst_dir_path):
+def save_imgs(origin_path_seq, img_seq, dst_dir_path, passed_origin_map=None):
     for imgpath, img in zip(origin_path_seq, img_seq):
         img_dstpath = make_new_path(dst_dir_path,imgpath)
+        if passed_origin_map is not None:
+            img = decategorize(img, passed_origin_map)
         #print(img_dstpath)
         cv2.imwrite(img_dstpath, bgr_uint8(img))
 
@@ -148,26 +151,40 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
     os.makedirs(os.path.join(result_dirpath,'valid'))
     os.makedirs(os.path.join(result_dirpath,'test'))
 
-    if train_imgs is None:
+    '''
+    # why it didn't work? why so slow???
+    if train_imgs is None: # not passed from arguments.
         train_imgs = list(load_imgs(train_img_paths))
         train_masks= list(load_imgs(train_mask_paths))
         valid_imgs = list(load_imgs(valid_img_paths))
         valid_masks= list(load_imgs(valid_mask_paths))
         test_imgs  = list(load_imgs(test_img_paths))
         test_masks = list(load_imgs(test_mask_paths))
+        passed_origin_map = None
+    else:
+        passed_origin_map = origin_map
+    '''
+    passed_origin_map = None
+    train_imgs = list(load_imgs(train_img_paths))
+    train_masks= list(load_imgs(train_mask_paths))
+    valid_imgs = list(load_imgs(valid_img_paths))
+    valid_masks= list(load_imgs(valid_mask_paths))
+    test_imgs  = list(load_imgs(test_img_paths))
+    test_masks = list(load_imgs(test_mask_paths))
 
-    save_imgs(train_img_paths, train_imgs, train_result_dir)
-    save_imgs(train_mask_paths,train_masks,train_result_dir)
-    save_imgs(valid_img_paths, valid_imgs, valid_result_dir)
-    save_imgs(valid_mask_paths,valid_masks,valid_result_dir)
-    save_imgs(test_img_paths, test_imgs, test_result_dir)
-    save_imgs(test_mask_paths,test_masks,test_result_dir)
+    save_imgs(train_img_paths, train_imgs, train_result_dir, passed_origin_map)
+    save_imgs(train_mask_paths,train_masks,train_result_dir, passed_origin_map)
+    save_imgs(valid_img_paths, valid_imgs, valid_result_dir, passed_origin_map)
+    save_imgs(valid_mask_paths,valid_masks,valid_result_dir, passed_origin_map)
+    save_imgs(test_img_paths, test_imgs, test_result_dir, passed_origin_map)
+    save_imgs(test_mask_paths,test_masks,test_result_dir, passed_origin_map)
 
     results = {'train_ious':[], 'valid_ious':[], 'test_ious':[],
             'mean_train_iou':0, 'mean_valid_iou':0, 'mean_test_iou':0}
     model = load_model(model_path, compile=False)
     # NOTE: because of keras bug, 'compile=False' is mendatory.
-    for path, img, ans in zip(train_result_paths, train_imgs, train_masks): 
+    for path, img, ans in tqdm(zip(train_result_paths, train_imgs, train_masks),
+                               total=len(train_imgs)): 
         result, score = evaluate(model, img, ans, modulo)
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
@@ -175,7 +192,8 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         results['train_ious'].append( np.asscalar(np.mean(score)) )
         cv2.imwrite(path, uint8img)
     print('----')
-    for path, img, ans in zip(valid_result_paths, valid_imgs, valid_masks): 
+    for path, img, ans in tqdm(zip(valid_result_paths, valid_imgs, valid_masks),
+                               total=len(valid_imgs)): 
         result, score = evaluate(model, img, ans, modulo)
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
@@ -183,7 +201,8 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         results['valid_ious'].append( np.asscalar(np.mean(score)) )
         cv2.imwrite(path, uint8img)
     print('----')
-    for path, img, ans in zip(test_result_paths, test_imgs,test_masks): 
+    for path, img, ans in tqdm(zip(test_result_paths, test_imgs,test_masks),
+                               total=len(valid_imgs)): 
         result, score = evaluate(model, img, ans, modulo)
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)

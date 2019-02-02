@@ -242,8 +242,8 @@ def main(experiment_yml_path):
 
     print('Model ' + model_name + ' is trained successfully!')
 
-    evaluator.eval_and_save(model_name, DATASET_YML, experiment_yml_path,
-        train_imgs, train_masks, valid_imgs, valid_masks, test_imgs, test_masks)
+    evaluator.eval_and_save(model_name, DATASET_YML, experiment_yml_path)
+        #train_imgs, train_masks, valid_imgs, valid_masks, test_imgs, test_masks)
 
 
 if __name__ == '__main__':
