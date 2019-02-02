@@ -210,7 +210,7 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         results['test_ious'].append( np.asscalar(np.mean(score)) )
         cv2.imwrite(path, uint8img)
 
-    result_yml_name = os.path.join(result_dir,model_name) + '.yml'
+    result_yml_name = os.path.join(result_dir,'[result]'+model_name) + '.yml'
     result_dict = dict(results, **dataset_dict)
 
     with open(result_yml_name,'w') as f:

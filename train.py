@@ -258,6 +258,6 @@ def main(experiment_yml_path):
     evaluator.eval_and_save(model_path, DATASET_YML, experiment_yml_path)
         #train_imgs, train_masks, valid_imgs, valid_masks, test_imgs, test_masks)
 
-
+import sys
 if __name__ == '__main__':
-    main('test.yml')
+    main(sys.argv[1])
