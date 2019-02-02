@@ -219,11 +219,11 @@ def main(experiment_yml_path):
     )
 
 
-    model_name = experiment_name + '_' + start_time 
+    model_name = '['+experiment_name +']'+start_time 
     result_dir = model_name
     os.makedirs(result_dir)
     shutil.copyfile(experiment_yml_path, 
-                    pjoin(result_dir, 'config_'+model_name+'.yml'))
+                    pjoin(result_dir, '[config]'+model_name+'.yml'))
 
     from keras.utils import plot_model
     plot_model(model, to_file=pjoin(result_dir,model_name+'.png'), 
