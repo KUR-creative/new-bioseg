@@ -106,6 +106,7 @@ def main(experiment_yml_path):
     DATASET_YML = config['DATASET_YML']
     MODEL = config['MODEL']
     NUM_MAXPOOL = config['NUM_MAXPOOL']
+    TRANSFER_LEARNING = config['TRANSFER_LEARNING']
 
     aug,img_aug,mask_aug = None,None,None
     aug = augmenter(BATCH_SIZE, IMG_SIZE, 1, 
@@ -217,15 +218,21 @@ def main(experiment_yml_path):
                          batch_size=BATCH_SIZE, write_graph=False)
 
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=12)# NEW
-    # train model(encoder only)
-    model.fit_generator(train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #10 (dataset_2019-01-28_03_11_43)
-                        validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
-                        callbacks=[model_checkpoint,tboard])
-    set_trainable(model)
-    # train model(whole network)
-    model.fit_generator(train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #90 (dataset_2019-01-28_03_11_43)
-                        validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
-                        callbacks=[model_checkpoint,tboard,reduce_lr])
+    if TRANSFER_LEARNING:
+        # train model(encoder only)
+        model.fit_generator(train_gen, steps_per_epoch=-1, epochs=NUM_EPOCHS, #10 (dataset_2019-01-28_03_11_43)
+                            validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
+                            callbacks=[model_checkpoint,tboard])
+        set_trainable(model)
+        # train model(whole network)
+        model.fit_generator(train_gen, steps_per_epoch=-1, epochs=NUM_EPOCHS, #90 (dataset_2019-01-28_03_11_43)
+                            validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
+                            callbacks=[model_checkpoint,tboard,reduce_lr])
+    else:
+        model.fit_generator(train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #90 (dataset_2019-01-28_03_11_43)
+                            validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
+                            callbacks=[model_checkpoint,tboard,reduce_lr])
+
 
     print('Model ' + model_name + ' is trained successfully!')
 
