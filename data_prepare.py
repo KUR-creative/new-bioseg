@@ -109,6 +109,8 @@ def main(experiment_yml_path):
     TRANSFER_LEARNING = config['TRANSFER_LEARNING']
     NUM_FILTERS = config['NUM_FILTERS']
     OPTIMIZER = config['OPTIMIZER']
+    PATIENCE = config['PATIENCE']
+    MIN_LR = config['MIN_LR']
 
     aug,img_aug,mask_aug = None,None,None
     aug = augmenter(BATCH_SIZE, IMG_SIZE, 1, 
@@ -223,7 +225,8 @@ def main(experiment_yml_path):
     tboard = TensorBoard(log_dir='model_logs/'+model_name+'_logs',
                          batch_size=BATCH_SIZE, write_graph=False)
 
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=12)# NEW
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', 
+                                  patience=PATIENCE,min_lr=MIN_LR)# NEW
     if TRANSFER_LEARNING:
         # train model(encoder only)
         model.fit_generator(train_gen, steps_per_epoch=-1, epochs=NUM_EPOCHS, #10 (dataset_2019-01-28_03_11_43)
