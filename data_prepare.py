@@ -1,10 +1,19 @@
+import yaml
+import cv2
 import numpy as np
 from imgaug import augmenters as iaa
 from itertools import cycle, islice
-from utils import load_imgs, splited_paths, file_paths, human_sorted, bgr_float32
+from utils import load_imgs, splited_paths, file_paths, human_sorted, bgr_float32, filename_ext
 from utils import now_time_str
 from utils import categorize, decategorize, unique_colors
 from keras.callbacks import ModelCheckpoint, TensorBoard, ReduceLROnPlateau
+
+from segmentation_models import Unet
+from segmentation_models.utils import set_trainable
+
+from metrics import jaccard_coefficient, weighted_categorical_crossentropy
+
+import evaluator
 
 #-------- data augmentation --------
 #def random_crop
@@ -79,126 +88,156 @@ def bgr_weights(masks):
     w_r = n_all / n_bgr[2]
     return w_b,w_g,w_r
 
-BATCH_SIZE = 8
-IMG_SIZE = 256
-num_classes = 3
 
-aug,img_aug,mask_aug = None,None,None
-aug = augmenter(BATCH_SIZE, IMG_SIZE, 1, 
-        crop_before_augs=[
-          iaa.Fliplr(0.5),
-          iaa.Flipud(0.5),
-          iaa.Affine(rotate=(-180,180),mode='reflect'),
-        ],
-        crop_after_augs=[
-          iaa.ElasticTransformation(alpha=(100,200),sigma=14,mode='reflect'),
-        ]
-      )
-(train_img_paths, train_mask_paths, 
- valid_img_paths, valid_mask_paths, 
- test_img_paths, test_mask_paths) \
-    = splited_paths(human_sorted(file_paths('../boundary_data190125/image/')),
-                    human_sorted(file_paths('../boundary_data190125/label/')))
-#NOTE: You must use ^ this paths to evaluate model.
-# dataset is randomly splited per trainings..
-train_imgs = list(load_imgs(train_img_paths))
-train_masks= list(map(lambda img: categorize(img)[0],load_imgs(train_mask_paths)))
-valid_imgs = list(load_imgs(valid_img_paths))
-valid_masks= list(map(lambda img: categorize(img)[0],load_imgs(valid_mask_paths)))
-test_imgs  = list(load_imgs(test_img_paths))
-test_masks = list(map(lambda img: categorize(img)[0],load_imgs(test_mask_paths)))
+def main(experiment_yml_path):
+    with open(experiment_yml_path,'r') as f:
+        print('now: ', experiment_yml_path)
+        config = yaml.load(f)
+    experiment_name = filename_ext(experiment_yml_path).name
+    print(experiment_name, '\n', config)
+    NUM_CLASSES = 3
+    IMG_SIZE = config['IMG_SIZE']
+    BATCH_SIZE = config['BATCH_SIZE']
+    NUM_EPOCHS = config['NUM_EPOCHS']
+    STEPS_PER_EPOCH = config['BATCH_SIZE']
+    DATASET_YML = config['DATASET_YML']
+    #exit('not now')
+    '''
+    BATCH_SIZE = 8
+    IMG_SIZE = 256
+    NUM_CLASSES = 3
+    STEPS_PER_EPOCH = 2
+    NUM_EPOCHS = 1
+    '''
 
-train_weights = bgr_weights(train_masks)
-valid_weights = bgr_weights(valid_masks)
-test_weights = bgr_weights(test_masks)
-print('train weights:', train_weights)
-print('valid weights:', valid_weights)
-print(' test weights:', test_weights)
-weights = np.array(train_weights) + np.array(valid_weights) + np.array(test_weights)
-print('total weights:', weights)
-weights /= np.sum(weights)
-print('normalized weights:', weights)
+    aug,img_aug,mask_aug = None,None,None
+    aug = augmenter(BATCH_SIZE, IMG_SIZE, 1, 
+            crop_before_augs=[
+              iaa.Fliplr(0.5),
+              iaa.Flipud(0.5),
+              iaa.Affine(rotate=(-180,180),mode='reflect'),
+            ],
+            crop_after_augs=[
+              iaa.ElasticTransformation(alpha=(100,200),sigma=14,mode='reflect'),
+            ]
+          )
+    if DATASET_YML is None:
+        (train_img_paths, train_mask_paths, 
+         valid_img_paths, valid_mask_paths, 
+         test_img_paths, test_mask_paths) \
+            = splited_paths(human_sorted(file_paths('./boundary_data190125/image/')),
+                            human_sorted(file_paths('./boundary_data190125/label/')))
+        print('train_img_paths: ['); print(*train_img_paths, ']',sep=',\n')
+        print('train_mask_paths: [');print(*train_mask_paths,']',sep=',\n')
 
-train_gen = batch_gen(train_imgs, train_masks, BATCH_SIZE, aug, img_aug, num_classes=num_classes)
-valid_gen = batch_gen(valid_imgs, valid_masks, BATCH_SIZE, aug, img_aug, num_classes=num_classes)
-test_gen  = batch_gen(test_imgs, test_masks, BATCH_SIZE, aug, img_aug, num_classes=num_classes)
+        print('valid_img_paths: ['); print(*valid_img_paths, ']',sep=',\n')
+        print('valid_mask_paths: [');print(*valid_mask_paths,']',sep=',\n')
 
-'''
-# DEBUG
-import cv2
-mask= bgr_float32(cv2.imread(train_mask_paths[0]))
-categorized_mask,origin_map = categorize(mask)
-print(origin_map)
-for ims,mas in test_gen:
-    for im,ma in zip(ims,mas):
-        print('ma',np.unique(ma.reshape(-1,ma.shape[2]), axis=0))
-        ma = np.around(ma)
-        print('rounded ma',np.unique(ma.reshape(-1,ma.shape[2]), axis=0))
-        de = decategorize(ma,origin_map)
-        print('de',np.unique(de.reshape(-1,de.shape[2]), axis=0))
-        cv2.imshow('i',im)
-        cv2.imshow('m',ma)
-        cv2.imshow('dm',de); cv2.waitKey(0)
-        #if num_classes == 4:
-        #    print(ma.shape)
-        #    cv2.imshow('m',bgrk2bgr(ma)); cv2.waitKey(0)
-        #else:
-        #    cv2.imshow('m',ma); cv2.waitKey(0)
-'''
+        print('test_img_paths: [');  print(*test_img_paths, ']',sep=',\n')
+        print('test_mask_paths: ['); print(*test_mask_paths,']',sep=',\n')
+        exit('not implemented')
+    else:
+        with open(DATASET_YML,'r') as f:
+            print('now: ', DATASET_YML)
+            dataset = yaml.load(f)
+        train_img_paths  = dataset['train_img_paths']
+        train_mask_paths = dataset['train_mask_paths']
+        valid_img_paths  = dataset['valid_img_paths']
+        valid_mask_paths = dataset['valid_mask_paths']
+        test_img_paths   = dataset['test_img_paths']
+        test_mask_paths  = dataset['test_mask_paths']
 
-from segmentation_models import Unet
-from segmentation_models.utils import set_trainable
+    #NOTE: You must use ^ this paths to evaluate model.
+    # dataset is randomly splited per trainings..
+    train_imgs = list(load_imgs(train_img_paths))
+    train_masks= list(map(lambda img: categorize(img)[0],load_imgs(train_mask_paths)))
+    valid_imgs = list(load_imgs(valid_img_paths))
+    valid_masks= list(map(lambda img: categorize(img)[0],load_imgs(valid_mask_paths)))
+    test_imgs  = list(load_imgs(test_img_paths))
+    test_masks = list(map(lambda img: categorize(img)[0],load_imgs(test_mask_paths)))
 
-# prepare model
-model = Unet(backbone_name='resnet34', encoder_weights='imagenet',
-             classes=3, activation='softmax',freeze_encoder=True)
-from metrics import jaccard_coefficient, weighted_categorical_crossentropy
-model.compile(
-    optimizer='Adam', 
-    loss=weighted_categorical_crossentropy(weights),#'binary_crossentropy', 
-    metrics=[jaccard_coefficient]#['binary_accuracy']
-)
+    train_weights = bgr_weights(train_masks)
+    valid_weights = bgr_weights(valid_masks)
+    test_weights = bgr_weights(test_masks)
+    print('train weights:', train_weights)
+    print('valid weights:', valid_weights)
+    print(' test weights:', test_weights)
+    weights = np.array(train_weights) + np.array(valid_weights) + np.array(test_weights)
+    print('total weights:', weights)
+    weights /= np.sum(weights)
+    print('normalized weights:', weights)
+
+    train_gen = batch_gen(train_imgs, train_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
+    valid_gen = batch_gen(valid_imgs, valid_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
+    test_gen  = batch_gen(test_imgs, test_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
+
+    # DEBUG
+    mask= bgr_float32(cv2.imread(train_mask_paths[0]))
+    categorized_mask,origin_map = categorize(mask)
+    print(origin_map)
+    for ims,mas in train_gen:
+        for im,ma in zip(ims,mas):
+            print('ma',np.unique(ma.reshape(-1,ma.shape[2]), axis=0))
+            ma = np.around(ma)
+            print('rounded ma',np.unique(ma.reshape(-1,ma.shape[2]), axis=0))
+            de = decategorize(ma,origin_map)
+            print('de',np.unique(de.reshape(-1,de.shape[2]), axis=0))
+            cv2.imshow('i',im)
+            cv2.imshow('m',ma)
+            cv2.imshow('dm',de); cv2.waitKey(0)
+    '''
+    '''
+
+    # prepare model
+    model = Unet(backbone_name='resnet34', encoder_weights='imagenet',
+                 classes=3, activation='softmax',freeze_encoder=True)
+    model.compile(
+        optimizer='Adam', 
+        loss=weighted_categorical_crossentropy(weights),#'binary_crossentropy', 
+        metrics=[jaccard_coefficient]#['binary_accuracy']
+    )
 
 
-#from keras.utils import plot_model
-start_time = now_time_str()
-model_name = 'tmp_model_' + start_time + '.h5'
+    #from keras.utils import plot_model
+    start_time = now_time_str()
+    model_name = 'tmp_model_' + start_time + '.h5'
 
-import yaml
-import cv2
-mask = bgr_float32(cv2.imread(train_mask_paths[0]))
-categorized_mask,origin_map = categorize(mask)
-print(origin_map)
-dataset_name = 'dataset_' + start_time + '.yml'
-dataset_dict = {
-    'train_imgs':train_img_paths, 'train_masks':train_mask_paths,
-    'valid_imgs':valid_img_paths, 'valid_masks':valid_mask_paths,
-    'test_imgs':test_img_paths, 'test_masks':test_mask_paths,
-    'origin_map':origin_map
-}
-with open(dataset_name,'w') as f:
-    f.write(yaml.dump(dataset_dict))
-#NOTE: You must use this ^ paths to evaluate model.
+    mask = bgr_float32(cv2.imread(train_mask_paths[0]))
+    categorized_mask,origin_map = categorize(mask)
+    print(origin_map)
+    dataset_name = 'dataset_' + start_time + '.yml'
+    dataset_dict = {
+        'train_imgs':train_img_paths, 'train_masks':train_mask_paths,
+        'valid_imgs':valid_img_paths, 'valid_masks':valid_mask_paths,
+        'test_imgs':test_img_paths, 'test_masks':test_mask_paths,
+        'origin_map':origin_map
+    }
+    with open(dataset_name,'w') as f:
+        f.write(yaml.dump(dataset_dict))
+    #NOTE: You must use this ^ paths to evaluate model.
 
-#plot_model(model, to_file='pt_model.png', show_shapes=True)
+    #plot_model(model, to_file='pt_model.png', show_shapes=True)
 
-model_checkpoint = ModelCheckpoint(model_name, monitor='val_loss',
-                                   verbose=1, save_best_only=True)
-tboard = TensorBoard(log_dir='model_logs/'+start_time+'_logs',
-                     batch_size=BATCH_SIZE, write_graph=False)
+    model_checkpoint = ModelCheckpoint(model_name, monitor='val_loss',
+                                       verbose=1, save_best_only=True)
+    tboard = TensorBoard(log_dir='model_logs/'+start_time+'_logs',
+                         batch_size=BATCH_SIZE, write_graph=False)
 
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=12)# NEW
-# train model(encoder only)
-model.fit_generator(train_gen, steps_per_epoch=100, epochs=30, #10 (dataset_2019-01-28_03_11_43)
-                    validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
-                    callbacks=[model_checkpoint,tboard])
-set_trainable(model)
-# train model(whole network)
-model.fit_generator(train_gen, steps_per_epoch=100, epochs=270, #90 (dataset_2019-01-28_03_11_43)
-                    validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
-                    callbacks=[model_checkpoint,tboard,reduce_lr])
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', patience=12)# NEW
+    # train model(encoder only)
+    model.fit_generator(train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #10 (dataset_2019-01-28_03_11_43)
+                        validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
+                        callbacks=[model_checkpoint,tboard])
+    set_trainable(model)
+    # train model(whole network)
+    model.fit_generator(train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #90 (dataset_2019-01-28_03_11_43)
+                        validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
+                        callbacks=[model_checkpoint,tboard,reduce_lr])
 
-print('Model ' + model_name + ' is trained successfully!')
+    print('Model ' + model_name + ' is trained successfully!')
 
-import evaluator
-evaluator.eval_and_save(model_name)
+    evaluator.eval_and_save(model_name)
+
+
+if __name__ == '__main__':
+    main('test.yml')
