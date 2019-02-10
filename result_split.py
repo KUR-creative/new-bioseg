@@ -5,7 +5,7 @@ Copy masks(postprocessed results) with respect to dataset_yml.
 [label] => [train|valid|test]
 '''
 
-import os, shutil
+import os, shutil, sys
 import yaml
 
 def move(key, dst_dir):
@@ -16,8 +16,8 @@ def move(key, dst_dir):
         shutil.copyfile(img_path, dst_img_path)
 
 
-dataset_yml_path = #'./boundary190203/thick0data.yml'
-dst_directory = #'./eval_postprocessed/GT/'
+dataset_yml_path = sys.argv[1]#'./boundary190203/thick0data.yml'
+dst_directory = sys.argv[2]#'./eval_postprocessed/GT/'
 
 with open(dataset_yml_path, 'r') as f:
     dic = yaml.load(f)
