@@ -67,9 +67,12 @@ def splited_paths(img_paths,mask_paths, train_r=0.7,valid_r=0.2,test_r=0.1):
             list(test_imgs), list(test_masks))
 
 def load_imgs(img_paths, mode_flag=cv2.IMREAD_COLOR):
+    def imread(path, mode_flag):
+        #print('wtf?:', path)
+        return cv2.imread(path,mode_flag)
     #print(img_paths)
-    return map(lambda path: bgr_float32(cv2.imread(path, mode_flag)),
-               img_paths) 
+    #return map(lambda path: bgr_float32(cv2.imread(path, mode_flag)), img_paths) 
+    return map(lambda path: bgr_float32(imread(path, mode_flag)), img_paths) 
 
 from keras.utils import to_categorical
 def categorize(img):

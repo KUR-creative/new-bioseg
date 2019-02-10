@@ -218,6 +218,33 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
 
     print('result images and ' + result_yml_name + ' are saved successfully!')
 
+from utils import human_sorted, file_paths, load_imgs, filename_ext
+from metric import advanced_metric
+def eval_postprocessed(pred_dir, ans_dir):
+    pred_paths = human_sorted(file_paths(pred_dir))
+    ans_paths  = human_sorted(file_paths(ans_dir))
+
+    names = map(lambda p:filename_ext(p).name, pred_paths)
+    predictions = load_imgs(pred_paths, cv2.IMREAD_GRAYSCALE)
+    answers = load_imgs(ans_paths, cv2.IMREAD_GRAYSCALE)
+
+    for name,pred,ans in zip(names,predictions,answers):
+        f1, dice_obj = advanced_metric(ans,pred)
+        #print(name, 'f1score =', f1, 'dice_obj =', dice_obj)
+        print(name, f1, dice_obj, sep='\t')
+        '''
+        #DEBUG
+        cv2.imshow('pred', pred)
+        cv2.imshow('ans', ans); cv2.waitKey(0)
+        '''
+    return pred_paths,ans_paths
+
 if __name__ == '__main__':
+    eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
+    '''
+    pp,ap = eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
+    for p,a in zip(pp,ap):
+        print(p,a, os.path.basename(p)[:-12] == os.path.basename(a)[:-9])
     pass
+    '''
     #eval_and_save('dataset_2019-01-28_03_11_43.h5')
