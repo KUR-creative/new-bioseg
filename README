@@ -1,0 +1,107 @@
+자동화된 실험을 위해서는 
+
+------------------------------------------------------------------------------------
+[1] data_folder: 실제 이미지가 있는 폴더
+------------------------------------------------------------------------------------
+    dataset_name
+        image
+            1.png 2.png ...
+        label
+            1.png 2.png ...
+
+    (이름이 같을 필요는 없으나, human_sorted시에 동일한 순서로 나와야 함.)
+
+
+------------------------------------------------------------------------------------
+[2] config.yml: dataset과 실험 설정을 셋팅하는 yml 파일
+------------------------------------------------------------------------------------
+
+# DO NOT remove unused fields and leave them blank. 
+# It will be interpreted as None.
+
+NUM_CLASSES: 3
+
+IMG_SIZE: 304 #352 #256 #288 # 384
+
+BATCH_SIZE: 8 
+NUM_EPOCHS: 200
+STEPS_PER_EPOCH: 100
+
+DATASET_YML: ./boundary190203/thick1data.yml # <------------- dataset.yml 경로.
+MODEL: naive_unet
+OPTIMIZER: Adam #delta
+
+PATIENCE: 20
+MIN_LR: 1.0e-6
+
+TRANSFER_LEARNING: False
+NUM_FILTERS: 48
+NUM_MAXPOOL: 4 # 2^4 = 16
+
+
+다음 명령으로 학습을 시작한다. 현재, 학습 후 자동적으로 evaluation을 수행한다.
+python train.py config.yml
+
+
+------------------------------------------------------------------------------------
+[2] dataset.yml: data_folder의 이미지들을 적절하게 나누는(train/valid/test) yml 파일
+------------------------------------------------------------------------------------
+
+이 yml 파일은 실제로 학습을 하기 위한 데이터셋을 형성한다.
+config.yml에서 dataset.yml을 교체하는 것으로 간단히 데이터셋을 바꿀 수 있다.
+
+이 yml 파일에는 label의 색을 one-hot class로 맵핑하는 origin_map과
+각 이미지에 대한 경로 정보를 일일이 나열해 놓았다.
+
+origin_map:                             # one-hot-class : label-color
+  ? !!python/tuple [0.0, 0.0, 1.0]
+  : [1.0, 1.0, 1.0]
+  ? !!python/tuple [0.0, 1.0, 0.0]
+  : [0.0, 1.0, 0.0]
+  ? !!python/tuple [1.0, 0.0, 0.0]
+  : [0.0, 0.0, 0.0]
+test_imgs: [./boundary190203/1/image/train_36.bmp, ./boundary190203/1/image/train_39.bmp,
+  ./boundary190203/1/image/train_34.bmp, ./boundary190203/1/image/testA_22.bmp,
+  ./boundary190203/1/image/train_26.bmp, ./boundary190203/1/image/train_32.bmp,
+  ./boundary190203/1/image/testA_19.bmp, ./boundary190203/1/image/testB_19.bmp,
+  ./boundary190203/1/image/train_83.bmp, ./boundary190203/1/image/train_82.bmp,
+  ./boundary190203/1/image/testB_20.bmp]
+test_masks: [./boundary190203/1/label/train_36_anno.bmp, ./boundary190203/1/label/train_39_anno.bmp,
+  ./boundary190203/1/label/train_34_anno.bmp, ./boundary190203/1/label/testA_22_anno.bmp,
+  ./boundary190203/1/label/train_26_anno.bmp, ./boundary190203/1/label/train_32_anno.bmp,
+  ./boundary190203/1/label/testA_19_anno.bmp, ./boundary190203/1/label/testB_19_anno.bmp,
+  ./boundary190203/1/label/train_83_anno.bmp, ./boundary190203/1/label/train_82_anno.bmp,
+  ./boundary190203/1/label/testB_20_anno.bmp]
+train_imgs: [./boundary190203/1/image/testA_56.bmp, ./boundary190203/1/image/train_70.bmp,
+  ./boundary190203/1/image/testA_12.bmp, ./boundary190203/1/image/testA_33.bmp,
+  ./boundary190203/1/image/train_18.bmp, ./boundary190203/1/image/train_13.bmp,
+  ./boundary190203/1/image/train_67.bmp, ./boundary190203/1/image/testA_37.bmp,
+  ./boundary190203/1/image/testA_43.bmp, ./boundary190203/1/image/testA_9.bmp,
+  ./boundary190203/1/image/testA_1.bmp, ./boundary190203/1/image/testB_9.bmp,
+  ...
+
+
+이 파일을 yaml을 이용하여 파이썬 데이터 구조로 바꿀 경우 다음과 같다.
+{
+    'origin_map': { 
+        one-hot-class-tuple: label-rgb-list,
+        (0.0, 0.0, 1.0): [1.0, 1.0, 1.0],
+        (1.0, 0.0, 0.0): [0.0, 0.0, 0.0] 
+    },
+
+    'train_imgs': ['1.png', '2.png', ... ],
+    'train_masks':['1.png', '2.png', ... ],
+    'valid_imgs': ['7.png', '9.png', ... ],
+    'valid_masks':['7.png', '9_anno.png', ... ],
+    'test_imgs':  ['0.png', '3.png', ... ],
+    'test_masks': ['0_anno.png', '3_anno.png', ... ],
+}
+
+(img와 masks의 이름이 같을 필요는 없으나, human_sorted시에 동일한 순서로 나와야 함.)
+
+
+*) 
+dataset.yml 파일은 train.py와 config를 이용하여 학습할 때 자동 생성할 수 있다.
+(현재는 무작위로 t/v/t로 나누는 것만 지원)
+
+------------------------------------------------------------------------------
