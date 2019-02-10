@@ -44,7 +44,7 @@ python train.py config.yml
 
 
 ------------------------------------------------------------------------------------
-[2] dataset.yml: data_folder의 이미지들을 적절하게 나누는(train/valid/test) yml 파일
+[3] dataset.yml: data_folder의 이미지들을 적절하게 나누는(train/valid/test) yml 파일
 ------------------------------------------------------------------------------------
 
 dataset.yml 파일은 실제로 학습을 하기 위한 데이터셋을 형성한다.
@@ -111,3 +111,36 @@ dataset.yml과 실제 data_folder에 있는 이미지 간의 무결성을 체크
 ------------------------------------------------------------------------------
 
 
+[TEMPORARY EVALUATION code]
+
+현재 완전 자동화가 불가능하기에, 결과를 받아서 평가하는데 쓰일 코드이다.
+이 코드는 차후에 완전히 자동화할 때 제거될 수 있다.
+
+현재 평가에 필요한 폴더 구조는 다음과 같다.
+
+dataset_folder
+    input
+        train
+        valid
+        test
+
+    label       // ground truth.
+        train
+        valid
+        test
+
+    experiments1
+        train
+        valid
+        test
+
+    experiments2
+        train
+        valid
+        test
+
+    ...
+
+(각 폴더에서 이미지들의 이름은 human_sorted를 적용했을 때 같은 순서로 정렬되어야 한다.)
+
+나중에 postprocessing이 자동화된다면 이런 구조는 버릴 수도 있다. 일단 지금은 이 구조로 하자.
