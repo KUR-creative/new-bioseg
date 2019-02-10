@@ -47,10 +47,10 @@ python train.py config.yml
 [2] dataset.yml: data_folder의 이미지들을 적절하게 나누는(train/valid/test) yml 파일
 ------------------------------------------------------------------------------------
 
-이 yml 파일은 실제로 학습을 하기 위한 데이터셋을 형성한다.
+dataset.yml 파일은 실제로 학습을 하기 위한 데이터셋을 형성한다.
 config.yml에서 dataset.yml을 교체하는 것으로 간단히 데이터셋을 바꿀 수 있다.
 
-이 yml 파일에는 label의 색을 one-hot class로 맵핑하는 origin_map과
+dataset.yml 파일에는 label의 색을 one-hot class로 맵핑하는 origin_map과
 각 이미지에 대한 경로 정보를 일일이 나열해 놓았다.
 
 origin_map:                             # one-hot-class : label-color
@@ -81,7 +81,7 @@ train_imgs: [./boundary190203/1/image/testA_56.bmp, ./boundary190203/1/image/tra
   ...
 
 
-이 파일을 yaml을 이용하여 파이썬 데이터 구조로 바꿀 경우 다음과 같다.
+dataset.yml을 yaml을 이용하여 파이썬 데이터 구조로 바꿀 경우 다음과 같다.
 {
     'origin_map': { 
         one-hot-class-tuple: label-rgb-list,
@@ -104,4 +104,10 @@ train_imgs: [./boundary190203/1/image/testA_56.bmp, ./boundary190203/1/image/tra
 dataset.yml 파일은 train.py와 config를 이용하여 학습할 때 자동 생성할 수 있다.
 (현재는 무작위로 t/v/t로 나누는 것만 지원)
 
+TODO:
+dataset.yml과 실제 data_folder에 있는 이미지 간의 무결성을 체크하라
+(예를 들어 이미지의 수가 맞지 않으면 예외를 던져 실험을 중지하라)
+
 ------------------------------------------------------------------------------
+
+
