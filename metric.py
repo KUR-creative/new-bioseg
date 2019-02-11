@@ -28,11 +28,21 @@ for img in imgs:
 '''
 def intersection_table(ans, num_ans_labels, pred, num_pred_labels):
     '''
-    row: ans label
-    col: pred label
+    row: answer label
+    col: prediction label
     content: number of pixels in intersection between ans and pred  
+
+    example
+    *   0   1   2   3  <- prediction label 
+    0   0   0   0   0
+    1   0   2   87  1
+    2   0   23  4   9
+    3   0   0   0   34
+    ^-- answer label
+
     NOTE 
     Table always has label 0. But it's meaningless.
+    (label 0 is background, )
     Just for convenient indexing.
     '''
     assert ans.shape == pred.shape
@@ -46,6 +56,7 @@ def intersection_table(ans, num_ans_labels, pred, num_pred_labels):
             num_intersected = np.sum(intersection.astype(int))
             #print(ans_label,pred_label)
             itab[ans_label,pred_label] = num_intersected
+    print(itab)
     return itab
 
 def tp_table(itab):
@@ -74,9 +85,9 @@ def confusion_stats(tp_table):
     tp = len(np.unique(ys)) - 1 # skip 0
     fp = len_x - tp - 1 # skip 0
     fn = len_y - tp - 1 # skip 0
-    #print(tp,fp,fn)
-    #print('yi:',ys)
-    #print('xi:',xs)
+    print(tp,fp,fn)
+    print('yi:',ys)
+    print('xi:',xs)
     ys = filter(lambda y: y != 0,ys[1:])
     xs = filter(lambda x: x != 0,xs[1:])
     tp_yxs = [(0,0)] + list(zip(ys,xs))
@@ -104,6 +115,7 @@ def object_dice(tp_tab, tp_yxs, ans_areas, pred_areas):
     tp_yxs: true positive label pair list<ans_label,pred_label>
     '''
     intersections = intersection_areas(tp_tab, tp_yxs)
+    print('intersections:',intersections)
     ans_areas[0] = 0
     pred_areas[0] = 0
     gamma = area_ratios(ans_areas,sum(ans_areas))
@@ -123,22 +135,31 @@ def object_dice(tp_tab, tp_yxs, ans_areas, pred_areas):
 def advanced_metric(ans, pred):
     ans = (ans >= 0.5).astype(np.uint8) * 255
     pred = (pred >= 0.5).astype(np.uint8) * 255
+    #cv2.imshow('ans',ans)
+    #cv2.imshow('pred',pred); cv2.waitKey(0)
 
     ans_ouput = cv2.connectedComponentsWithStats(ans, 4)
     ans = ans_ouput[1]
     ans_areas = ans_ouput[2][:,cv2.CC_STAT_AREA]
-    #print(ans_areas)
+    print(type(ans),np.unique(ans))
+    #cv2.imshow('ans',ans); cv2.waitKey(0)
+    print(' ans:',ans_areas)
+    #for i in range(len(ans_areas)): cv2.imshow('ans', (ans == i).astype(np.uint8) * 255); cv2.waitKey(0)
 
     pred_ouput = cv2.connectedComponentsWithStats(pred, 4)
     pred = pred_ouput[1]
     pred_areas = pred_ouput[2][:,cv2.CC_STAT_AREA]
-    #print(pred_areas)
+    print(type(pred),np.unique(pred))
+    print('pred:',pred_areas)
+    #for i in range(len(pred_areas)): cv2.imshow('pred', (pred == i).astype(np.uint8) * 255); cv2.waitKey(0)
 
     tp_tab = tp_table(intersection_table(ans,len(ans_areas), 
                                          pred,len(pred_areas)))
+    print('tp_tab\n',tp_tab)
     tp, fp, fn, tp_yxs = confusion_stats(tp_tab)
+    print('tp_yxs', tp_yxs)
     f1 = f1score(tp,fp,fn)
-    dice_obj = object_dice(tp_tab,tp_yxs,ans_areas,pred_areas)
+    dice_obj = object_dice(tp_tab, tp_yxs, ans_areas,pred_areas)
 
     return f1, dice_obj
 '''
@@ -445,6 +466,15 @@ class Test_stats(unittest.TestCase):
         print('------ ordinary ans, pred has small FN -----')
         ans = cv2.imread('./img/2ans.png',0)
         pred = cv2.imread('./img/2pred.png',0)
+
+        f1, dice_obj = advanced_metric(ans,pred)
+        print('f1score =', f1)
+        print('dice_obj =', dice_obj)
+
+    def test_real_bio_data(self):
+        print('------ two similar images -----')
+        ans = cv2.imread('./img/train_21_anno.bmp',0)
+        pred = cv2.imread('./img/train_21_predict.bmp',0)
 
         f1, dice_obj = advanced_metric(ans,pred)
         print('f1score =', f1)

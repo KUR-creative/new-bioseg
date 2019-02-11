@@ -221,26 +221,78 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
 from utils import human_sorted, file_paths, load_imgs, filename_ext
 from metric import advanced_metric
 def eval_postprocessed(pred_dir, ans_dir):
-    pred_paths = human_sorted(file_paths(pred_dir))
-    ans_paths  = human_sorted(file_paths(ans_dir))
+    def result_tuples(names,predictions,answers):
+        return (
+            (name,)+advanced_metric(ans,pred) 
+            for name,pred,ans
+            in zip(names,predictions,answers)
+        )
+        '''
+        #DEBUG
+        for pred,ans in zip(predictions,answers):
+            cv2.imshow('pred', pred)
+            cv2.imshow('ans', ans); cv2.waitKey(0)
+        exit()
+        '''
 
+    def ret(pred_paths, ans_paths):
+        names = map(lambda p:filename_ext(p).name, pred_paths)
+        predictions = load_imgs(pred_paths, cv2.IMREAD_GRAYSCALE)
+        answers = load_imgs(ans_paths, cv2.IMREAD_GRAYSCALE)
+
+        return result_tuples(names,predictions,answers)
+        '''
+        for name, f1, dice_obj in gen:
+            print(name, f1, dice_obj, sep='\t')
+        '''
+
+    train_pred_dir = os.path.join(pred_dir,'train')
+    train_ans_dir  = os.path.join(ans_dir, 'train')
+    valid_pred_dir = os.path.join(pred_dir,'valid')
+    valid_ans_dir  = os.path.join(ans_dir, 'valid')
+    test_pred_dir  = os.path.join(pred_dir,'test')
+    test_ans_dir   = os.path.join(ans_dir, 'test')
+
+    train_pred_paths = human_sorted(file_paths(train_pred_dir))
+    train_ans_paths  = human_sorted(file_paths(train_ans_dir))
+    valid_pred_paths = human_sorted(file_paths(valid_pred_dir))
+    valid_ans_paths  = human_sorted(file_paths(valid_ans_dir))
+    test_pred_paths  = human_sorted(file_paths(test_pred_dir))
+    test_ans_paths   = human_sorted(file_paths(test_ans_dir))
+
+    # tups = tuples<name,f1,dice_obj>
+    train_tups = ret(train_pred_paths, train_ans_paths)
+    valid_tups = ret(valid_pred_paths, valid_ans_paths)
+    test_tups  = ret(test_pred_paths,  test_ans_paths)
+    return train_tups,valid_tups,test_tups
+
+    '''
     names = map(lambda p:filename_ext(p).name, pred_paths)
     predictions = load_imgs(pred_paths, cv2.IMREAD_GRAYSCALE)
     answers = load_imgs(ans_paths, cv2.IMREAD_GRAYSCALE)
 
-    for name,pred,ans in zip(names,predictions,answers):
-        f1, dice_obj = advanced_metric(ans,pred)
-        #print(name, 'f1score =', f1, 'dice_obj =', dice_obj)
+    gen = result_tuples(names,predictions,answers)
+    for name, f1, dice_obj in gen:
         print(name, f1, dice_obj, sep='\t')
-        '''
-        #DEBUG
-        cv2.imshow('pred', pred)
-        cv2.imshow('ans', ans); cv2.waitKey(0)
-        '''
-    return pred_paths,ans_paths
+    '''
+    #return pred_paths,ans_paths
 
 if __name__ == '__main__':
-    eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
+    train_tups,valid_tups,test_tups \
+        = eval_postprocessed('./eval_postprocessed/thick2/', 
+                             './eval_postprocessed/GT/')
+    print('-------train-------')
+    for name,f1,dice_obj in train_tups:
+        print(name, f1, dice_obj, sep=',')
+
+    print('-------valid-------')
+    for name,f1,dice_obj in valid_tups:
+        print(name, f1, dice_obj, sep=',')
+
+    print('-------test-------')
+    for name,f1,dice_obj in test_tups:
+        print(name, f1, dice_obj, sep=',')
+
     '''
     pp,ap = eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
     for p,a in zip(pp,ap):
