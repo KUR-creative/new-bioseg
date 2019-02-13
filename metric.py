@@ -91,6 +91,16 @@ def confusion_stats(tp_table):
     ys = filter(lambda y: y != 0,ys[1:])
     xs = filter(lambda x: x != 0,xs[1:])
     tp_yxs = [(0,0)] + list(zip(ys,xs))
+    '''
+    tp_yxs = [(0,0)]
+    for y in range(len_y):
+        for x in range(len_x):
+            if tp_tab[y][x] != 0:
+                # Stack (y,x) into tp_yxs.
+                # Verify early test cases.
+                # Add more test cases..
+    '''
+
     return tp,fp,fn, tp_yxs
 
 def intersection_areas(tp_table, tp_yxs):
@@ -443,6 +453,7 @@ class Test_stats(unittest.TestCase):
         self.assertEqual(f1,0.0)
         self.assertEqual(dice_obj,0.0)
 
+    @unittest.skip('manual test')
     def test_real_data0(self):
         print('------ ordinary ans, pred has big FN -----')
         ans = cv2.imread('./img/0ans.png',0)
@@ -452,6 +463,7 @@ class Test_stats(unittest.TestCase):
         print('f1score =', f1)
         print('dice_obj =', dice_obj)
 
+    @unittest.skip('manual test')
     def test_real_data1(self):
         print('------ ordinary ans, pred has small FN -----')
         ans = cv2.imread('./img/1ans.png',0)
@@ -462,6 +474,7 @@ class Test_stats(unittest.TestCase):
         print('f1score =', f1)
         print('dice_obj =', dice_obj)
 
+    @unittest.skip('manual test')
     def test_real_data2(self):
         print('------ ordinary ans, pred has small FN -----')
         ans = cv2.imread('./img/2ans.png',0)
@@ -471,6 +484,7 @@ class Test_stats(unittest.TestCase):
         print('f1score =', f1)
         print('dice_obj =', dice_obj)
 
+    @unittest.skip('manual test')
     def test_real_bio_data(self):
         print('------ two similar images -----')
         ans = cv2.imread('./img/train_21_anno.bmp',0)
