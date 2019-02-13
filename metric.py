@@ -56,7 +56,7 @@ def intersection_table(ans, num_ans_labels, pred, num_pred_labels):
             num_intersected = np.sum(intersection.astype(int))
             #print(ans_label,pred_label)
             itab[ans_label,pred_label] = num_intersected
-    print(itab)
+    #print(itab)
     return itab
 
 def tp_table(itab):
@@ -85,6 +85,7 @@ def confusion_stats(tp_table):
     tp = len(np.unique(ys)) - 1 # skip 0
     fp = len_x - tp - 1 # skip 0
     fn = len_y - tp - 1 # skip 0
+    '''
     print(tp,fp,fn)
     print('yi:',ys)
     print('xi:',xs)
@@ -93,13 +94,13 @@ def confusion_stats(tp_table):
     tp_yxs = [(0,0)] + list(zip(ys,xs))
     '''
     tp_yxs = [(0,0)]
-    for y in range(len_y):
-        for x in range(len_x):
-            if tp_tab[y][x] != 0:
+    for y in range(1,len_y):
+        for x in range(1,len_x):
+            if tp_table[y][x] != 0:
+                tp_yxs.append( (y,x) )
                 # Stack (y,x) into tp_yxs.
                 # Verify early test cases.
                 # Add more test cases..
-    '''
 
     return tp,fp,fn, tp_yxs
 
@@ -125,7 +126,7 @@ def object_dice(tp_tab, tp_yxs, ans_areas, pred_areas):
     tp_yxs: true positive label pair list<ans_label,pred_label>
     '''
     intersections = intersection_areas(tp_tab, tp_yxs)
-    print('intersections:',intersections)
+    #print('intersections:',intersections)
     ans_areas[0] = 0
     pred_areas[0] = 0
     gamma = area_ratios(ans_areas,sum(ans_areas))
@@ -151,23 +152,23 @@ def advanced_metric(ans, pred):
     ans_ouput = cv2.connectedComponentsWithStats(ans, 4)
     ans = ans_ouput[1]
     ans_areas = ans_ouput[2][:,cv2.CC_STAT_AREA]
-    print(type(ans),np.unique(ans))
+    #print(type(ans),np.unique(ans))
     #cv2.imshow('ans',ans); cv2.waitKey(0)
-    print(' ans:',ans_areas)
+    #print(' ans:',ans_areas)
     #for i in range(len(ans_areas)): cv2.imshow('ans', (ans == i).astype(np.uint8) * 255); cv2.waitKey(0)
 
     pred_ouput = cv2.connectedComponentsWithStats(pred, 4)
     pred = pred_ouput[1]
     pred_areas = pred_ouput[2][:,cv2.CC_STAT_AREA]
-    print(type(pred),np.unique(pred))
-    print('pred:',pred_areas)
+    #print(type(pred),np.unique(pred))
+    #print('pred:',pred_areas)
     #for i in range(len(pred_areas)): cv2.imshow('pred', (pred == i).astype(np.uint8) * 255); cv2.waitKey(0)
 
     tp_tab = tp_table(intersection_table(ans,len(ans_areas), 
                                          pred,len(pred_areas)))
-    print('tp_tab\n',tp_tab)
+    #print('tp_tab\n',tp_tab)
     tp, fp, fn, tp_yxs = confusion_stats(tp_tab)
-    print('tp_yxs', tp_yxs)
+    #print('tp_yxs', tp_yxs)
     f1 = f1score(tp,fp,fn)
     dice_obj = object_dice(tp_tab, tp_yxs, ans_areas,pred_areas)
 
@@ -484,7 +485,7 @@ class Test_stats(unittest.TestCase):
         print('f1score =', f1)
         print('dice_obj =', dice_obj)
 
-    @unittest.skip('manual test')
+    #@unittest.skip('manual test')
     def test_real_bio_data(self):
         print('------ two similar images -----')
         ans = cv2.imread('./img/train_21_anno.bmp',0)
