@@ -3,3 +3,5 @@
 !*.py
 !README
 !*.md
+!.gitignore
+!*.m
