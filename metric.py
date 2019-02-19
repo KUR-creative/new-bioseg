@@ -26,6 +26,12 @@ for img in imgs:
     print(np.unique(labels))
     print(labels.dtype)
 '''
+
+def label_objects(img):
+    outputs = cv2.connectedComponentsWithStats(img, 4)
+    labeled = outputs[1]
+    return labeled
+
 def intersection_table(ans, num_ans_labels, pred, num_pred_labels):
     '''
     row: answer label
@@ -155,7 +161,7 @@ def advanced_metric(ans, pred):
     #print(type(ans),np.unique(ans))
     #cv2.imshow('ans',ans); cv2.waitKey(0)
     #print(' ans:',ans_areas)
-    #for i in range(len(ans_areas)): cv2.imshow('ans', (ans == i).astype(np.uint8) * 255); cv2.waitKey(0)
+    for i in range(len(ans_areas)): cv2.imshow('ans', (ans == i).astype(np.uint8) * 255); cv2.waitKey(0)
 
     pred_ouput = cv2.connectedComponentsWithStats(pred, 4)
     pred = pred_ouput[1]
@@ -183,6 +189,49 @@ print(intersection.astype(int))
 '''
     
 import unittest
+from oct2py import Oct2Py
+class TestMetrics(unittest.TestCase):
+    def test_real_data1(self):
+        print('------ two similar images -----')
+        pred = cv2.imread('./img/train_21_predict.bmp',0)
+        ans = cv2.imread('./img/train_21_anno.bmp',0)
+
+        S = label_objects(pred)
+        G = label_objects(ans)
+
+        oc = Oct2Py()
+        f1_v1 = oc.F1score_v1(S,G)
+        f1_v2 = oc.F1score_v2(S,G)
+        dice_obj = oc.ObjectDice(S,G)
+        #hausdorff_obj = oc.ObjectHausdorff(S,G)
+
+        #f1, dice_obj = advanced_metric(ans,pred)
+        print('f1score v1 =', f1_v1)
+        print('f1score v2 =', f1_v2)
+        print('dice_obj =', dice_obj)
+
+    def test_real_data2(self):
+        print('------ two similar images -----')
+        pred = cv2.imread('./img/testA_13_predict.bmp',0)
+        ans = cv2.imread('./img/testA_13_anno.bmp',0)
+        #print(type(pred))
+        #print(pred)
+        #cv2.imshow('pred',pred); cv2.waitKey(0)
+
+        S = label_objects(pred)
+        G = label_objects(ans)
+
+        oc = Oct2Py()
+        f1_v1 = oc.F1score_v1(S,G)
+        f1_v2 = oc.F1score_v2(S,G)
+        dice_obj = oc.ObjectDice(S,G)
+        #hausdorff_obj = oc.ObjectHausdorff(S,G)
+
+        #f1, dice_obj = advanced_metric(ans,pred)
+        print('f1score v1 =', f1_v1)
+        print('f1score v2 =', f1_v2)
+        print('dice_obj =', dice_obj)
+'''
 class test_itable(unittest.TestCase):
     def test_unmatched_shape(self):
         ans = np.ones((3,2))
@@ -494,7 +543,7 @@ class Test_stats(unittest.TestCase):
         f1, dice_obj = advanced_metric(ans,pred)
         print('f1score =', f1)
         print('dice_obj =', dice_obj)
-
+'''
 
 if __name__ == '__main__':
     unittest.main()
