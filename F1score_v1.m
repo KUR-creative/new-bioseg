@@ -1,4 +1,4 @@
-function score = F1score(S,G)
+function score = F1score_v1(S,G)
 % F1score calculates f1 score for detection
 %
 % Inputs:
