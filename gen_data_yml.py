@@ -12,10 +12,25 @@ label_dirpaths = list(map(lambda name: os.path.join(labels_directory,name), labe
 label_paths_seq = map(lambda ldir: [filename_ext(ldir).name,file_paths(ldir)], label_dirpaths)
 label_paths_dic = {dirname:human_sorted(label_paths) for dirname,label_paths in label_paths_seq} 
 
+def bioseg_dataset(origin_map, img_paths,label_paths):
+    #NOTE: DO NOT use 'train' or 'test' in name of directory.
+    return {
+            'origin_map':origin_map,
+
+        'train_imgs':[p for p in img_paths if 'train' in p],
+        'valid_imgs':[p for p in img_paths if 'testA' in p],
+         'test_imgs':[p for p in img_paths if 'testB' in p],
+
+        'train_masks':[p for p in label_paths if 'train' in p],
+        'valid_masks':[p for p in label_paths if 'testA' in p],
+         'test_masks':[p for p in label_paths if 'testB' in p]
+    }
+
 if dataset_type == 'boundary_bioseg':
     origin_map = {(0.0, 0.0, 1.0): [1.0, 1.0, 1.0], 
                   (0.0, 1.0, 0.0): [0.0, 1.0, 0.0], 
                   (1.0, 0.0, 0.0): [0.0, 0.0, 0.0]}
+    dataset_dict = bioseg_dataset
 else:
     #TODO: incomplete.
     origin_maps = []
