@@ -2,11 +2,11 @@ import os, sys
 import cv2
 from utils import human_sorted,file_paths,filename_ext
 
-img_dir = './exact_boundary190223/image/'
-labels_directory = './exact_boundary190223/label_dirs/'
+#img_dir = './exact_boundary190223/image/'
+#labels_directory = './exact_boundary190223/label_dirs/'
 
-#img_dir = sys.argv[0]
-#label_dirs = sys.argv[1:]
+img_dir = sys.argv[1]
+labels_directory = sys.argv[2]
 
 img_paths = human_sorted(file_paths(img_dir))
 print(img_paths)
