@@ -1,5 +1,30 @@
 '''
-python sanity_check.py image_dirpayh label_dirpaths
+python sanity_check.py image_dirpath label_dirpaths
+
+image_dirpath
+    ans1.png
+    ans2.png
+    ...
+    ans_end.png
+
+labels_dirpath
+    label1_directory
+        ans1.png
+        ans2.png
+        ...
+        ans_end.png
+
+    label2_directory
+        ans1.png
+        ans2.png
+        ...
+        ans_end.png
+
+    label3_directory
+        ans1.png
+        ans2.png
+        ...
+        ans_end.png
 
 ex)
 python sanity_check.py ./exact_boundary190223/image/ ./exact_boundary190223/label_dirs/
@@ -8,9 +33,6 @@ python sanity_check.py ./exact_boundary190223/image/ ./exact_boundary190223/labe
 import os, sys
 import cv2
 from utils import human_sorted,file_paths,filename_ext
-
-#img_dir = './exact_boundary190223/image/'
-#labels_directory = './exact_boundary190223/label_dirs/'
 
 img_dir = sys.argv[1]
 labels_directory = sys.argv[2]
