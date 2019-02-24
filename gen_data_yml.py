@@ -41,10 +41,27 @@ else:
             label = cv2.imread(label_path)
             print(categorize(label)[1])
 
+def thick_label_name_rule(label_name):
+    return label_name[:-5]
 
 for label_dirname in label_dirnames:
-    print( bioseg_dataset(origin_map, img_paths, label_paths_dic[label_dirname]) )
-with open('test.yml','w') as dic:
-    dic.write(yaml.dump(
-        dataset_dict(origin_map, img_paths, label_paths_dic[label_dirname])
-    ))
+    dic = bioseg_dataset(origin_map, img_paths, label_paths_dic[label_dirname])
+
+    def sanity_check(img_paths, label_paths):
+        img_names = map(lambda p:filename_ext(p).name, img_paths)
+        label_names = map(lambda p:filename_ext(p).name, label_paths)
+        for img_name, label_file_name in zip(img_names,label_names):
+            label_name = thick_label_name_rule(label_file_name)
+            assert img_name == label_name
+
+    # Sanity Check
+    print('------------- labels:', label_dirname)
+    sanity_check(dic['train_imgs'],dic['train_masks'])
+    sanity_check(dic['valid_imgs'],dic['valid_masks'])
+    sanity_check(dic['test_imgs'], dic['test_masks'])
+
+    data_yml_name = label_dirname + 'data.yml'
+    with open(data_yml_name,'w') as dic:
+        dic.write(yaml.dump(
+            dataset_dict(origin_map, img_paths, label_paths_dic[label_dirname])
+        ))
