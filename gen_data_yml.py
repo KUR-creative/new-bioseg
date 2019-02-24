@@ -1,3 +1,36 @@
+'''
+Generate dataset_yml.
+
+Usage:
+    python gen_data_yml.py image_dirpath label_dirpath dataset_type
+
+image_dirpath
+    ans1.png
+    ans2.png
+    ...
+    ans_end.png
+
+labels_dirpath
+    label1_directory
+        ans1.png
+        ans2.png
+        ...
+        ans_end.png
+
+    label2_directory
+        ans1.png
+        ans2.png
+        ...
+        ans_end.png
+
+    label3_directory
+        ans1.png
+        ans2.png
+        ...
+        ans_end.png
+ex)
+    python gen_data_yml.py ./exact_boundary190223/image/ ./exact_boundary190223/label_dirs/ boundary_bioseg
+'''
 import os, sys
 import cv2
 import yaml
@@ -6,6 +39,10 @@ from utils import human_sorted,file_paths,filename_ext, categorize
 img_dir = './exact_boundary190223/image/'
 labels_directory = './exact_boundary190223/label_dirs/'
 dataset_type = 'boundary_bioseg'
+
+img_dir = sys.argv[1]
+labels_directory = sys.argv[2]
+dataset_type = sys.argv[3]
 
 img_paths = human_sorted(file_paths(img_dir))
 label_dirnames = human_sorted(os.listdir(labels_directory))
