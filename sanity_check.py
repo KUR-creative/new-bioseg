@@ -1,5 +1,9 @@
 '''
-python sanity_check.py image_dirpath label_dirpaths
+Sanity Check for image:label dataset.
+image(1):label(N)
+
+Usage:
+    python sanity_check.py image_dirpath label_dirpaths
 
 image_dirpath
     ans1.png
@@ -27,7 +31,7 @@ labels_dirpath
         ans_end.png
 
 ex)
-python sanity_check.py ./exact_boundary190223/image/ ./exact_boundary190223/label_dirs/
+    python sanity_check.py ./exact_boundary190223/image/ ./exact_boundary190223/label_dirs/
 '''
 
 import os, sys
