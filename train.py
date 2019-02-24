@@ -269,4 +269,5 @@ def main(experiment_yml_path):
 
 import sys
 if __name__ == '__main__':
-    main(sys.argv[1])
+    experiment_yml_path = sys.argv[1]
+    main(experiment_yml_path) 
