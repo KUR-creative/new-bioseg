@@ -1,5 +1,6 @@
 import os, sys
 import cv2
+import yaml
 from utils import human_sorted,file_paths,filename_ext, categorize
 
 img_dir = './exact_boundary190223/image/'
@@ -40,3 +41,10 @@ else:
             label = cv2.imread(label_path)
             print(categorize(label)[1])
 
+
+for label_dirname in label_dirnames:
+    print( bioseg_dataset(origin_map, img_paths, label_paths_dic[label_dirname]) )
+with open('test.yml','w') as dic:
+    dic.write(yaml.dump(
+        dataset_dict(origin_map, img_paths, label_paths_dic[label_dirname])
+    ))
