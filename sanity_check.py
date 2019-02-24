@@ -1,3 +1,10 @@
+'''
+python sanity_check.py image_dirpayh label_dirpaths
+
+ex)
+python sanity_check.py ./exact_boundary190223/image/ ./exact_boundary190223/label_dirs/
+'''
+
 import os, sys
 import cv2
 from utils import human_sorted,file_paths,filename_ext
