@@ -157,7 +157,7 @@ def advanced_metric(ans, pred):
     S = label_objects(pred)
     G = label_objects(ans)
 
-    oc = Oct2Py()
+    oc = Oct2Py(temp_dir='/run/shm')
     f1_v1 = oc.F1score_v1(S,G)
     #f1_v2 = oc.F1score_v2(S,G)
     dice_obj = oc.ObjectDice(S,G)
