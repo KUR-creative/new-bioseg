@@ -277,10 +277,13 @@ def eval_postprocessed(pred_dir, ans_dir):
     '''
     #return pred_paths,ans_paths
 
+import sys
 if __name__ == '__main__':
+    print('Usage: python evaluator.py predict_dirpath GT_dirpath')  
+    print('-----------------------------------------------------')
     train_tups,valid_tups,test_tups \
-        = eval_postprocessed('./eval_postprocessed/thick2/', 
-                             './eval_postprocessed/GT/')
+        = eval_postprocessed(sys.argv[1], sys.argv[2])
+        #= eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
     print('-------train-------')
     for name,f1,dice_obj in train_tups:
         print(name, f1, dice_obj, sep=',')
