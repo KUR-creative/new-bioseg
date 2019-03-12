@@ -28,7 +28,7 @@ for img in imgs:
 '''
 
 def label_objects(img):
-    print(img.shape)
+    #print(img.shape)
     outputs = cv2.connectedComponentsWithStats(img, 4)
     labeled = outputs[1]
     return labeled
