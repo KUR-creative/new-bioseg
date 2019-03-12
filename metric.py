@@ -159,13 +159,13 @@ def advanced_metric(ans, pred):
 
     #oc = Oct2Py(temp_dir='/run/shm')#ubuntu
     oc = Oct2Py(temp_dir='/tmp')#ubuntu: use tmpfs...
-    f1_v1 = oc.F1score_v1(S,G)
-    #f1_v2 = oc.F1score_v2(S,G)
+    #f1_v1 = oc.F1score_v1(S,G)
+    f1_v2 = oc.F1score_v2(S,G)
     dice_obj = oc.ObjectDice(S,G)
     #hausdorff_obj = oc.ObjectHausdorff(S,G)
 
-    return f1_v1, dice_obj#, hausdorff_obj
-    #return f1_v2, dice_obj#, hausdorff_obj
+    #return f1_v1, dice_obj#, hausdorff_obj
+    return f1_v2, dice_obj#, hausdorff_obj
     '''
     #cv2.imshow('ans',ans)
     #cv2.imshow('pred',pred); cv2.waitKey(0)
