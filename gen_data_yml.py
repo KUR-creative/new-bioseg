@@ -1,5 +1,5 @@
 '''
-Generate dataset_yml.
+Generate dataset_ymls. (not 1 yaml, many yamls!)
 
 Usage:
     python gen_data_yml.py image_dirpath label_dirpath dataset_type
