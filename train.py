@@ -16,7 +16,7 @@ from utils import load_imgs, bgr_float32, categorize, decategorize, unique_color
 from segmentation_models import Unet
 from segmentation_models.utils import set_trainable
 
-from metrics import jaccard_coefficient, weighted_categorical_crossentropy
+from metrics import jaccard_coefficient, weighted_categorical_crossentropy, mean_iou
 
 import evaluator
 import my_model
@@ -106,7 +106,7 @@ def main(experiment_yml_path):
 
     train_timer = ElapsedTimer(experiment_yml_path + ' training')
     #-------------------------------------------------------------------------------------------------
-    NUM_CLASSES = 3
+    NUM_CLASSES = config['NUM_CLASSES']
     IMG_SIZE = config['IMG_SIZE']
     BATCH_SIZE = config['BATCH_SIZE']
     NUM_EPOCHS = config['NUM_EPOCHS']
@@ -182,8 +182,10 @@ def main(experiment_yml_path):
     print(' test weights:', test_weights)
     weights = np.array(train_weights) + np.array(valid_weights) + np.array(test_weights)
     print('total weights:', weights)
+    weights = weights[:NUM_CLASSES]
     weights /= np.sum(weights)
     print('normalized weights:', weights)
+    print('NUM_CLASSES', NUM_CLASSES)
 
     train_gen = batch_gen(train_imgs, train_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
     valid_gen = batch_gen(valid_imgs, valid_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
@@ -202,7 +204,7 @@ def main(experiment_yml_path):
             de = decategorize(ma,origin_map)
             print('de',np.unique(de.reshape(-1,de.shape[2]), axis=0))
             cv2.imshow('i',im)
-            cv2.imshow('m',ma)
+            #cv2.imshow('m',ma)
             cv2.imshow('dm',de); cv2.waitKey(0)
     '''
 
@@ -211,14 +213,16 @@ def main(experiment_yml_path):
         model = Unet(backbone_name='resnet34', encoder_weights='imagenet',
                      classes=3, activation='softmax',freeze_encoder=True)
     elif MODEL == 'naive_unet':
-        model = my_model.unet(num_classes=NUM_CLASSES,
-                              num_maxpool=NUM_MAXPOOL,
-                              num_filters=NUM_FILTERS)
+        model = my_model.unet(
+            num_classes=NUM_CLASSES,
+            num_maxpool=NUM_MAXPOOL,
+            num_filters=NUM_FILTERS)
     model.compile(
         optimizer=OPTIMIZER,
         #optimizer='Adam', 
-        loss=weighted_categorical_crossentropy(weights),
+        loss=weighted_categorical_crossentropy(weights[:NUM_CLASSES]),
         metrics=[jaccard_coefficient]
+        #metrics=[mean_iou]
     )
 
 
@@ -251,9 +255,10 @@ def main(experiment_yml_path):
                             validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
                             callbacks=[model_checkpoint,tboard,reduce_lr])
     else:
-        model.fit_generator(train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #90 (dataset_2019-01-28_03_11_43)
-                            validation_data=valid_gen, validation_steps=(32 // BATCH_SIZE),# 30 all imgs.
-                            callbacks=[model_checkpoint,tboard,reduce_lr])
+        model.fit_generator(
+            train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #90 (dataset_2019-01-28_03_11_43)
+            validation_data=valid_gen, validation_steps=(32 // BATCH_SIZE),# 30 all imgs.
+            callbacks=[model_checkpoint,tboard,reduce_lr])
 
 
     print('Model ' + model_name + ' is trained successfully!')
