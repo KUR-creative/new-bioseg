@@ -106,6 +106,7 @@ def main(experiment_yml_path):
 
     train_timer = ElapsedTimer(experiment_yml_path + ' training')
     #-------------------------------------------------------------------------------------------------
+    EXPR_TYPE = config['EXPR_TYPE']
     NUM_CLASSES = config['NUM_CLASSES']
     IMG_SIZE = config['IMG_SIZE']
     BATCH_SIZE = config['BATCH_SIZE']
@@ -267,7 +268,14 @@ def main(experiment_yml_path):
     train_time_str = train_timer.elapsed_time()
 
     eval_timer = ElapsedTimer(experiment_yml_path + ' evaluation')
-    evaluator.eval_and_save(model_path, DATASET_YML, experiment_yml_path)
+    if EXPR_TYPE == 'boundary_bioseg':
+        evaluator.eval_and_save(
+            model_path, DATASET_YML, experiment_yml_path
+        )
+    else:
+        evaluator.eval_and_save_advanced_metric(
+            model_path, DATASET_YML, experiment_yml_path
+        )
     eval_time_str = eval_timer.elapsed_time()
 
         #train_imgs, train_masks, valid_imgs, valid_masks, test_imgs, test_masks)

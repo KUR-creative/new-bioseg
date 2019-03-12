@@ -4,6 +4,8 @@ import traceback
 import numpy as np
 import cv2
 from utils import decategorize
+from utils import human_sorted, file_paths, load_imgs, filename_ext
+from metric import advanced_metric
 def iou(y_true,y_pred,thr=0.5):
     y_true = (y_true.flatten() >= thr).astype(np.uint8)
     y_pred = (y_pred.flatten() >= thr).astype(np.uint8)
@@ -111,6 +113,19 @@ def evaluate(model, img, ans, modulo=32):
     iou_score = iou(result, ans)
     return result, iou_score
 
+def eval_advanced_metric(model, img, ans, origin_map, modulo=32):
+    segmap = segment(model, img, modulo)
+    n,h,w,c = segmap.shape
+    result = segmap.reshape((h,w,c))
+
+    decategorized = decategorize(np.around(result),origin_map)
+
+    ans = ans[:,:,0].reshape((h,w,1))
+    gray = decategorized[:,:,0].reshape((h,w,1))
+
+    f1_v2, dice_obj = advanced_metric(ans, gray)
+    return decategorized, f1_v2, dice_obj
+
 from keras.models import load_model
 import yaml
 import os
@@ -118,6 +133,7 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
                   train_imgs=None, train_masks=None,
                   valid_imgs=None, valid_masks=None,
                   test_imgs=None, test_masks=None):
+    #NOTE: not work with NUM_CLASSES != 3
     with open(experiment_yml_path,'r') as f:
         config = yaml.load(f)
     modulo = 2**(config['NUM_MAXPOOL'])
@@ -218,8 +234,103 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
 
     print('result images and ' + result_yml_name + ' are saved successfully!')
 
-from utils import human_sorted, file_paths, load_imgs, filename_ext
-from metric import advanced_metric
+def eval_and_save_advanced_metric(
+        model_path, dataset_dict_path, experiment_yml_path,
+        train_imgs=None, train_masks=None,
+        valid_imgs=None, valid_masks=None,
+        test_imgs=None, test_masks=None):
+    #NOTE: not work with NUM_CLASSES != 3
+    with open(experiment_yml_path,'r') as f:
+        config = yaml.load(f)
+    modulo = 2**(config['NUM_MAXPOOL'])
+    print('modulo =',modulo)
+    with open(dataset_dict_path,'r') as f:
+        print(dataset_dict_path)
+        dataset_dict = yaml.load(f)
+    
+    train_img_paths = dataset_dict['train_imgs']
+    train_mask_paths= dataset_dict['train_masks']
+    valid_img_paths = dataset_dict['valid_imgs']
+    valid_mask_paths= dataset_dict['valid_masks']
+    test_img_paths  = dataset_dict['test_imgs']
+    test_mask_paths = dataset_dict['test_masks']
+    origin_map = dataset_dict['origin_map']
+
+    model_name = filename_ext(model_path).name
+    result_dir = model_name
+    print(result_dir)
+    train_result_dir = os.path.join(result_dir,'train')
+    valid_result_dir = os.path.join(result_dir,'valid')
+    test_result_dir  = os.path.join(result_dir,'test')
+
+    #---- make result paths ----
+    train_result_paths = make_result_paths(train_img_paths,train_result_dir)
+    valid_result_paths = make_result_paths(valid_img_paths,valid_result_dir)
+    test_result_paths  = make_result_paths(test_img_paths,test_result_dir)
+
+    #---- save results ----
+    os.makedirs(os.path.join(result_dir,'train'))
+    os.makedirs(os.path.join(result_dir,'valid'))
+    os.makedirs(os.path.join(result_dir,'test'))
+
+    passed_origin_map = None
+    train_imgs = list(load_imgs(train_img_paths))
+    train_masks= list(load_imgs(train_mask_paths))
+    valid_imgs = list(load_imgs(valid_img_paths))
+    valid_masks= list(load_imgs(valid_mask_paths))
+    test_imgs  = list(load_imgs(test_img_paths))
+    test_masks = list(load_imgs(test_mask_paths))
+
+    save_imgs(train_img_paths, train_imgs, train_result_dir, passed_origin_map)
+    save_imgs(train_mask_paths,train_masks,train_result_dir, passed_origin_map)
+    save_imgs(valid_img_paths, valid_imgs, valid_result_dir, passed_origin_map)
+    save_imgs(valid_mask_paths,valid_masks,valid_result_dir, passed_origin_map)
+    save_imgs(test_img_paths, test_imgs, test_result_dir, passed_origin_map)
+    save_imgs(test_mask_paths,test_masks,test_result_dir, passed_origin_map)
+
+    results = {
+        'train_f1':[], 'valid_f1':[], 'test_f1':[],
+        'train_dice_obj':[], 'valid_dice_obj':[], 'test_dice_obj':[],
+        'mean_train_iou':0, 'mean_valid_iou':0, 'mean_test_iou':0
+    }
+    model = load_model(model_path, compile=False)
+    # NOTE: because of keras bug, 'compile=False' is mendatory.
+    for path, img, ans in tqdm(zip(train_result_paths, train_imgs, train_masks),
+                               total=len(train_imgs)): 
+        #cv2.imshow('ans?', ans);cv2.waitKey(0)
+        result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
+        uint8img = bgr_uint8(result)
+        #print(score,path)
+        results['train_f1'].append(f1)
+        results['train_dice_obj'].append(dice_obj)
+        cv2.imwrite(path, uint8img)
+    print('----')
+    for path, img, ans in tqdm(zip(valid_result_paths, valid_imgs, valid_masks),
+                               total=len(valid_imgs)): 
+        result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
+        uint8img = bgr_uint8(result)
+        #print(score,path)
+        results['valid_f1'].append(f1) 
+        results['valid_dice_obj'].append(dice_obj)
+        cv2.imwrite(path, uint8img)
+    print('----')
+    for path, img, ans in tqdm(zip(test_result_paths, test_imgs,test_masks),
+                               total=len(test_imgs)): 
+        result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
+        uint8img = bgr_uint8(result)
+        #print(score,path)
+        results['test_f1'].append(f1)
+        results['test_dice_obj'].append(dice_obj)
+        cv2.imwrite(path, uint8img)
+
+    result_yml_name = os.path.join(result_dir,'[result]'+model_name) + '.yml'
+    result_dict = dict(results, **dataset_dict)
+
+    with open(result_yml_name,'w') as f:
+        f.write(yaml.dump(result_dict))
+
+    print('result images and ' + result_yml_name + ' are saved successfully!')
+
 def eval_postprocessed(pred_dir, ans_dir):
     def result_tuples(names,predictions,answers):
         return (

@@ -109,12 +109,19 @@ def decategorize(categorized, origin_map):
 
 import unittest
 class test_categorize_func(unittest.TestCase):
+    #TODO: Add 2 classes case, 4 classes case, 10 classes case..
     def setUp(self):
         self.img = np.array(
             [[[0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],], 
              [[0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.],], 
              [[1.,1.,1.], [1.,1.,1.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.],], 
              [[1.,1.,1.], [1.,1.,1.], [1.,1.,1.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.], [0.,1.,0.],],])
+
+        self.img2 = np.array(
+            [[[0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],], 
+             [[0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],], 
+             [[1.,1.,1.], [1.,1.,1.], [1.,1.,1.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],], 
+             [[1.,1.,1.], [1.,1.,1.], [1.,1.,1.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],],])
 
     def test_categorize3color(self):
         img = np.copy(self.img)
@@ -125,6 +132,12 @@ class test_categorize_func(unittest.TestCase):
     def test_categorize4color(self):
         img = np.copy(self.img)
         img[0,0] = [2,2,2]
+        categorized,origin_map = categorize(img)
+        decategorized = decategorize(categorized, origin_map)
+        self.assertTrue(np.alltrue(img == decategorized))
+
+    def test_categorize2color(self):
+        img = np.copy(self.img2)
         categorized,origin_map = categorize(img)
         decategorized = decategorize(categorized, origin_map)
         self.assertTrue(np.alltrue(img == decategorized))
