@@ -239,7 +239,6 @@ def eval_and_save_advanced_metric(
         train_imgs=None, train_masks=None,
         valid_imgs=None, valid_masks=None,
         test_imgs=None, test_masks=None):
-    #NOTE: not work with NUM_CLASSES != 3
     with open(experiment_yml_path,'r') as f:
         config = yaml.load(f)
     modulo = 2**(config['NUM_MAXPOOL'])
@@ -299,8 +298,7 @@ def eval_and_save_advanced_metric(
                                total=len(train_imgs)): 
         #cv2.imshow('ans?', ans);cv2.waitKey(0)
         result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
-        uint8img = bgr_uint8(result)
-        #print(score,path)
+        uint8img = result.astype(np.uint8)
         results['train_f1'].append(f1)
         results['train_dice_obj'].append(dice_obj)
         cv2.imwrite(path, uint8img)
@@ -308,8 +306,7 @@ def eval_and_save_advanced_metric(
     for path, img, ans in tqdm(zip(valid_result_paths, valid_imgs, valid_masks),
                                total=len(valid_imgs)): 
         result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
-        uint8img = bgr_uint8(result)
-        #print(score,path)
+        uint8img = result.astype(np.uint8)
         results['valid_f1'].append(f1) 
         results['valid_dice_obj'].append(dice_obj)
         cv2.imwrite(path, uint8img)
@@ -317,8 +314,7 @@ def eval_and_save_advanced_metric(
     for path, img, ans in tqdm(zip(test_result_paths, test_imgs,test_masks),
                                total=len(test_imgs)): 
         result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
-        uint8img = bgr_uint8(result)
-        #print(score,path)
+        uint8img = result.astype(np.uint8)
         results['test_f1'].append(f1)
         results['test_dice_obj'].append(dice_obj)
         cv2.imwrite(path, uint8img)
@@ -390,22 +386,31 @@ def eval_postprocessed(pred_dir, ans_dir):
 
 import sys
 if __name__ == '__main__':
-    print('Usage: python evaluator.py predict_dirpath GT_dirpath')  
-    print('-----------------------------------------------------')
-    train_tups,valid_tups,test_tups \
-        = eval_postprocessed(sys.argv[1], sys.argv[2])
-        #= eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
-    print('-------train-------')
-    for name,f1,dice_obj in train_tups:
-        print(name, f1, dice_obj, sep=',')
+    if len(sys.argv) == 1 + 2:
+        train_tups,valid_tups,test_tups \
+            = eval_postprocessed(sys.argv[1], sys.argv[2])
+            #= eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
+        print('-------train-------')
+        for name,f1,dice_obj in train_tups:
+            print(name, f1, dice_obj, sep=',')
 
-    print('-------valid-------')
-    for name,f1,dice_obj in valid_tups:
-        print(name, f1, dice_obj, sep=',')
+        print('-------valid-------')
+        for name,f1,dice_obj in valid_tups:
+            print(name, f1, dice_obj, sep=',')
 
-    print('-------test-------')
-    for name,f1,dice_obj in test_tups:
-        print(name, f1, dice_obj, sep=',')
+        print('-------test-------')
+        for name,f1,dice_obj in test_tups:
+            print(name, f1, dice_obj, sep=',')
+    elif len(sys.argv) == 1 + 3: # eval with advanced_metric
+        model_path = sys.argv[1]
+        dataset_dict_path = sys.argv[2]
+        experiment_yml_path = sys.argv[3]
+        eval_and_save_advanced_metric(
+            model_path, dataset_dict_path, experiment_yml_path)
+    else:
+        print('Usage: python evaluator.py predict_dirpath GT_dirpath')  
+        print('Usage: python evaluator.py model_path dataset_dict_path experiment_yml_path')  
+
 
     '''
     pp,ap = eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
