@@ -256,9 +256,10 @@ def main(experiment_yml_path):
                             validation_data=valid_gen, validation_steps=4,# 4 * 8 bat = 32(30 valid imgs)
                             callbacks=[model_checkpoint,tboard,reduce_lr])
     else:
+        print('validation_steps =', ((len(valid_imgs)+BATCH_SIZE) // BATCH_SIZE))
         model.fit_generator(
             train_gen, steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_EPOCHS, #90 (dataset_2019-01-28_03_11_43)
-            validation_data=valid_gen, validation_steps=(32 // BATCH_SIZE),# 30 all imgs.
+            validation_data=valid_gen, validation_steps=((len(valid_imgs)+BATCH_SIZE) // BATCH_SIZE),
             callbacks=[model_checkpoint,tboard,reduce_lr])
 
 
