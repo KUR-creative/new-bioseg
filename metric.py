@@ -151,6 +151,8 @@ def object_dice(tp_tab, tp_yxs, ans_areas, pred_areas):
     return float(0.5 * (g_dice + s_dice))
 
 from oct2py import Oct2Py
+#oct2py = Oct2Py(temp_dir='/run/shm')#ubuntu
+oct2py  = Oct2Py(temp_dir='/tmp')#ubuntu: use tmpfs...
 def advanced_metric(ans, pred):
     ans = (ans >= 0.5).astype(np.uint8) * 255
     pred = (pred >= 0.5).astype(np.uint8) * 255
@@ -158,11 +160,9 @@ def advanced_metric(ans, pred):
     S = label_objects(pred)
     G = label_objects(ans)
 
-    #oc = Oct2Py(temp_dir='/run/shm')#ubuntu
-    oc = Oct2Py(temp_dir='/tmp')#ubuntu: use tmpfs...
     #f1_v1 = oc.F1score_v1(S,G)
-    f1_v2 = oc.F1score_v2(S,G)
-    dice_obj = oc.ObjectDice(S,G)
+    f1_v2 = oct2py.F1score_v2(S,G)
+    dice_obj = oct2py.ObjectDice(S,G)
     #hausdorff_obj = oc.ObjectHausdorff(S,G)
 
     #return f1_v1, dice_obj#, hausdorff_obj
