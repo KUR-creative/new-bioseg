@@ -2,6 +2,11 @@ import os,re,yaml
 import xlsxwriter
 from collections import namedtuple
 import numpy as np
+from math import isnan
+
+def chk_nan2zero(x):
+    return 0 if isnan(x) else x
+
 def filename_ext(path):
     name_ext = namedtuple('name_ext','name ext')
     return name_ext( *os.path.splitext(os.path.basename(path)) )
@@ -102,10 +107,10 @@ for name in result_dirpaths:
     # Write data columns
     train_names = [filename(p) for p in result['train_imgs']]
     valid_names = [filename(p) for p in result['valid_imgs']]
-    train_f1s = result['train_f1']
-    valid_f1s = result['valid_f1']
-    train_dice_objs = result['train_dice_obj']
-    valid_dice_objs = result['valid_dice_obj']
+    train_f1s = [chk_nan2zero(x) for x in result['train_f1']]
+    valid_f1s = [chk_nan2zero(x) for x in result['valid_f1']]
+    train_dice_objs = [chk_nan2zero(x) for x in result['train_dice_obj']]
+    valid_dice_objs = [chk_nan2zero(x) for x in result['valid_dice_obj']]
 
     expr_sh.write_column(train_beg_y,0, train_names) 
     expr_sh.write_column(train_beg_y,1, train_f1s) 
