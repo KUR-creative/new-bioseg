@@ -96,9 +96,9 @@ valid_beg_y = valid_keys_y + 1
 valid_avrg_y = valid_beg_y + len(result['valid_imgs']) 
 
 expr_sh.write_row(train_keys_y,0, train_keys_row, key_format)
-#expr_sh.write(train_avrg_y,0, 'train avrg', key_format)
+expr_sh.write(train_avrg_y,0, 'train avrg', key_format)
 expr_sh.write_row(valid_keys_y,0, valid_keys_row, key_format)
-#expr_sh.write(valid_avrg_y,0, 'valid avrg', key_format)
+expr_sh.write(valid_avrg_y,0, 'valid avrg', key_format)
 
 # Write data columns
 train_names = [filename(p) for p in result['train_imgs']]
