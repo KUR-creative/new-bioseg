@@ -87,7 +87,7 @@ expr_sh.write_column(0,1, expr_info_vals_col) # y,x
 # Write train/valid key row, and avrg key cell
 train_keys_row = ['train', 'f1 score', 'dice_obj']
 valid_keys_row = ['valid', 'f1 score', 'dice_obj']
-
+# Calculate ys 
 train_keys_y = len(expr_info_keys_col) + 1
 train_beg_y = train_keys_y + 1
 train_avrg_y = train_beg_y + len(result['train_imgs']) 
@@ -103,8 +103,18 @@ expr_sh.write(valid_avrg_y,0, 'valid avrg', key_format)
 # Write data columns
 train_names = [filename(p) for p in result['train_imgs']]
 valid_names = [filename(p) for p in result['valid_imgs']]
+train_f1s = result['train_f1']
+valid_f1s = result['valid_f1']
+train_dice_objs = result['train_dice_obj']
+valid_dice_objs = result['valid_dice_obj']
+
 expr_sh.write_column(train_beg_y,0, train_names) 
+expr_sh.write_column(train_beg_y,1, train_f1s) 
+expr_sh.write_column(train_beg_y,2, train_dice_objs) 
+
 expr_sh.write_column(valid_beg_y,0, valid_names) 
+expr_sh.write_column(valid_beg_y,1, valid_f1s) 
+expr_sh.write_column(valid_beg_y,2, valid_dice_objs) 
 '''
 for fname in result_dirpaths:
     valid_fname = fname.replace('[','__').replace(']','__')
