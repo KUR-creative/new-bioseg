@@ -1,6 +1,7 @@
 import os,re,yaml
 import xlsxwriter
 from collections import namedtuple
+import numpy as np
 def filename_ext(path):
     name_ext = namedtuple('name_ext','name ext')
     return name_ext( *os.path.splitext(os.path.basename(path)) )
@@ -84,21 +85,21 @@ expr_sh.write_column(0,0, expr_info_keys_col, key_format)
 expr_sh.write_column(0,1, expr_info_vals_col) # y,x
 
 # Write f1 scores and dice_objs
-# Write train/valid key row, and avrg key cell
+# Write train/valid key row, and mean key cell
 train_keys_row = ['train', 'f1 score', 'dice_obj']
 valid_keys_row = ['valid', 'f1 score', 'dice_obj']
 # Calculate ys 
 train_keys_y = len(expr_info_keys_col) + 1
 train_beg_y = train_keys_y + 1
-train_avrg_y = train_beg_y + len(result['train_imgs']) 
-valid_keys_y = train_avrg_y + 2 
+train_mean_y = train_beg_y + len(result['train_imgs']) 
+valid_keys_y = train_mean_y + 2 
 valid_beg_y = valid_keys_y + 1
-valid_avrg_y = valid_beg_y + len(result['valid_imgs']) 
+valid_mean_y = valid_beg_y + len(result['valid_imgs']) 
 
 expr_sh.write_row(train_keys_y,0, train_keys_row, key_format)
-expr_sh.write(train_avrg_y,0, 'train avrg', key_format)
+expr_sh.write(train_mean_y,0, 'train mean', key_format)
 expr_sh.write_row(valid_keys_y,0, valid_keys_row, key_format)
-expr_sh.write(valid_avrg_y,0, 'valid avrg', key_format)
+expr_sh.write(valid_mean_y,0, 'valid mean', key_format)
 
 # Write data columns
 train_names = [filename(p) for p in result['train_imgs']]
@@ -115,6 +116,12 @@ expr_sh.write_column(train_beg_y,2, train_dice_objs)
 expr_sh.write_column(valid_beg_y,0, valid_names) 
 expr_sh.write_column(valid_beg_y,1, valid_f1s) 
 expr_sh.write_column(valid_beg_y,2, valid_dice_objs) 
+
+# Calculate mean values
+mean_train_f1 = np.asscalar(np.mean(train_f1s))
+mean_valid_f1 = np.asscalar(np.mean(valid_f1s))
+mean_train_dice_obj = np.asscalar(np.mean(train_dice_objs))
+mean_valid_dice_obj = np.asscalar(np.mean(valid_dice_objs))
 '''
 for fname in result_dirpaths:
     valid_fname = fname.replace('[','__').replace(']','__')
