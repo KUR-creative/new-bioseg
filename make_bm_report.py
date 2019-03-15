@@ -97,9 +97,7 @@ valid_beg_y = valid_keys_y + 1
 valid_mean_y = valid_beg_y + len(result['valid_imgs']) 
 
 expr_sh.write_row(train_keys_y,0, train_keys_row, key_format)
-expr_sh.write(train_mean_y,0, 'train mean', key_format)
 expr_sh.write_row(valid_keys_y,0, valid_keys_row, key_format)
-expr_sh.write(valid_mean_y,0, 'valid mean', key_format)
 
 # Write data columns
 train_names = [filename(p) for p in result['train_imgs']]
@@ -122,6 +120,13 @@ mean_train_f1 = np.asscalar(np.mean(train_f1s))
 mean_valid_f1 = np.asscalar(np.mean(valid_f1s))
 mean_train_dice_obj = np.asscalar(np.mean(train_dice_objs))
 mean_valid_dice_obj = np.asscalar(np.mean(valid_dice_objs))
+# Write mean values
+expr_sh.write(train_mean_y,0, 'train mean', key_format)
+expr_sh.write(train_mean_y,1, mean_train_f1)
+expr_sh.write(train_mean_y,2, mean_train_dice_obj)
+expr_sh.write(valid_mean_y,0, 'valid mean', key_format)
+expr_sh.write(valid_mean_y,1, mean_valid_f1)
+expr_sh.write(valid_mean_y,2, mean_valid_dice_obj)
 '''
 for fname in result_dirpaths:
     valid_fname = fname.replace('[','__').replace(']','__')
