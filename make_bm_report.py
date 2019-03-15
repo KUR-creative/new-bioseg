@@ -67,12 +67,18 @@ expr_sh.write_column(0,1, expr_info_vals_col) # y,x
 key_format = workbook.add_format({'bold':True})
 expr_sh.set_column(0,0, cell_format=key_format)
 
-'''
-score_keys_row = ['img name', 'f1 score', 'dice_obj']
+score_keys_row = ['train', 'f1 score', 'dice_obj']
 score_keys_y = len(expr_info_keys_col) + 1
 score_beg_y = score_keys_y + 1
 expr_sh.write_row(score_keys_y,0, score_keys_row)
 expr_sh.set_row(score_keys_y,0, cell_format=key_format)
+
+result_fname = '[result]' + name + '.yml'
+result_fpath = os.path.join(name,result_fname)
+with open(result_fpath) as result_file:
+    result = yaml.load(result_file)
+print(result)
+'''
 for fname in result_dirpaths:
     valid_fname = fname.replace('[','__').replace(']','__')
     expr_sh = workbook.add_worksheet(valid_fname)
