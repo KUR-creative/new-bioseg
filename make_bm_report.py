@@ -322,9 +322,6 @@ for name in result_dirpaths:
     summary_dic[v_m_f1].append(  mean_valid_m_dice_obj)  
     summary_dic[v_m_dice].append(mean_valid_m_dice_obj)
     
-    print('-----------------------------')
-    for k,v in summary_dic.items():
-        print(k,v)
     '''
     print(train_benigns_f1s)
     print(valid_benigns_f1s)
@@ -332,5 +329,15 @@ for name in result_dirpaths:
     print(valid_malignants_f1s)
     print(name)
     '''
-    
+for k,val_list in summary_dic.items():
+    if np.all(np.array(val_list) == None):
+        summary_dic[k] = None
+    elif np.any(np.array(val_list) == None):
+        raise ValueError("Impossible! %s" % str(val_list))
+    else:
+        summary_dic[k] = mean(val_list)
+print('-----------------------------')
+for k,v in summary_dic.items():
+    print(k,v)
+
 workbook.close()
