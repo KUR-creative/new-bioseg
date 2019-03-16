@@ -72,7 +72,7 @@ is_result = lambda p:('[b' in p) or ('[m' in p)
 result_dirpaths = human_sorted(filter(is_result, os.listdir(root)))
 #print(result_dirpaths,sep='\n')
 
-workbook = xlsxwriter.Workbook('test.xlsx')
+workbook = xlsxwriter.Workbook(sys.argv[1])
 summay_sh = workbook.add_worksheet('summary')
 key_format = workbook.add_format({'bold':True})
 
@@ -86,6 +86,7 @@ summary_info_keys_col = [
     'batch size',
 ]
 ultimate_summary_info_keys_col = [
+    '#experiments',
     'train data', 
     '#filters',
     '#layers',
@@ -130,11 +131,12 @@ num_layers_col = [34,42,34,42]*3
 benign_format = workbook.add_format({'bg_color':'#90EE90'})     # lightgreen
 malignant_format = workbook.add_format({'bg_color':'#FFA500'})  # orange
 all_format = workbook.add_format({'bg_color':'#87CEFA'})        # lightskyblue
-summay_sh.write_row(ulti_info_beg_y,  2, ['Benign']*4, benign_format)
-summay_sh.write_row(ulti_info_beg_y,  6, ['Malignant']*4, malignant_format)
-summay_sh.write_row(ulti_info_beg_y, 10, ['All']*4, all_format)
-summay_sh.write_row(ulti_info_beg_y+1,2, num_filters_col)
-summay_sh.write_row(ulti_info_beg_y+2,2, num_layers_col)
+ulti_train_data_y = ulti_info_beg_y + 1
+summay_sh.write_row(ulti_train_data_y,  2, ['Benign']*4, benign_format)
+summay_sh.write_row(ulti_train_data_y,  6, ['Malignant']*4, malignant_format)
+summay_sh.write_row(ulti_train_data_y, 10, ['All']*4, all_format)
+summay_sh.write_row(ulti_train_data_y+1,2, num_filters_col)
+summay_sh.write_row(ulti_train_data_y+2,2, num_layers_col)
 
 num_expr = 0
 
@@ -331,14 +333,22 @@ for name in tqdm(result_dirpaths):
     print(name)
     '''
 
-# Save mean values or None
-for k,val_list in summary_dic.items():
+n_expr_dict = {
+    ('Benign',32,34):0, ('Malignant',32,34):0, ('All',32,34):0,
+    ('Benign',32,42):0, ('Malignant',32,42):0, ('All',32,42):0,
+    ('Benign',64,34):0, ('Malignant',64,34):0, ('All',64,34):0,
+    ('Benign',64,42):0, ('Malignant',64,42):0, ('All',64,42):0, 
+}
+# Save mean values or None, and Save #experiments too. 
+for key,val_list in summary_dic.items():
+    BMA,n_filters,n_layers, _,_,_ = key
     if np.all(np.array(val_list) == None):
-        summary_dic[k] = None
+        summary_dic[key] = None
     elif np.any(np.array(val_list) == None):
         raise ValueError("Impossible! %s" % str(val_list))
     else:
-        summary_dic[k] = mean(val_list)
+        summary_dic[key] = mean(val_list)
+        n_expr_dict[BMA,n_filters,n_layers] = len(val_list)
 
 #print('-----------------------------')
 #for k,v in summary_dic.items():
@@ -364,5 +374,13 @@ for keytup,mean_val in summary_dic.items():
     y,x = keytup2yx(keytup); 
     #s = '{} {} {} {} {} {}'.format( *[str(s)[:2] for s in keytup] )
     summay_sh.write(y,x, mean_val)
+
+for key,num_experiments in n_expr_dict.items():
+    BMA,n_filters,n_layers = key
+    d_BMA = dict(Benign=0, Malignant=4, All=8)
+    d_n_filters= {32:0, 64:2}
+    d_n_layers = {34:0, 42:1}
+    x = 2 + d_BMA[BMA] + d_n_filters[n_filters] + d_n_layers[n_layers]
+    summay_sh.write(ulti_info_beg_y,x, num_experiments)
 
 workbook.close()
