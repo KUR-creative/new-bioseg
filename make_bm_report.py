@@ -351,19 +351,19 @@ def keytup2yx(keytup): #NOTE: do not move this func! it depends on global var!
     d_BMA = dict(Benign=0, Malignant=4, All=8)
     d_n_filters= {32:0, 64:2}
     d_n_layers = {34:0, 42:1}
-    y = d_f1_dice[f1_dice] + d_bm[bm] + d_tv[tv]
+    x = 2 + d_BMA[BMA] + d_n_filters[n_filters] + d_n_layers[n_layers]
 
     d_f1_dice = dict(f1=ulti_mean_f1s_beg_y, dice=ulti_mean_dices_beg_y)
     d_bm = dict(benign=0, malignant=2)
     d_tv = dict(train=0, valid=1)
-    x = 2 + d_BMA[BMA] + d_n_filters[n_filters] + d_n_layers[n_layers]
+    y = d_f1_dice[f1_dice] + d_bm[bm] + d_tv[tv]
 
     return y,x
 
-for keytup in summary_dic.keys():
+for keytup,mean_val in summary_dic.items():
     BMA,n_filters,n_layers,tv,bm,f1_dice = keytup
     y,x = keytup2yx(keytup); 
-    s = '{} {} {} {} {} {}'.format( *[str(s)[:2] for s in keytup] )
-    summay_sh.write(y,x, s)
+    #s = '{} {} {} {} {} {}'.format( *[str(s)[:2] for s in keytup] )
+    summay_sh.write(y,x, mean_val)
 
 workbook.close()
