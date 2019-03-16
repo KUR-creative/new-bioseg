@@ -76,10 +76,10 @@ expr_info_keys_col = [
     'train data', 
     '#filters',
     '#layers',
-    ' ',
+    '',
     'model',
     'optimizer',
-    ' ',
+    '',
     'img size',
     'batch size',
     '#epochs',
@@ -120,10 +120,10 @@ for name in result_dirpaths:
     elif expr['NUM_MAXPOOL'] == 5:
         num_layers = 42
     expr_info_vals_col.append(num_layers)           # number of layers
-    expr_info_vals_col.append(' ')
+    expr_info_vals_col.append('')
     expr_info_vals_col.append(expr['MODEL'])        # model
     expr_info_vals_col.append(expr['OPTIMIZER'])    # optimizer
-    expr_info_vals_col.append(' ')
+    expr_info_vals_col.append('')
     expr_info_vals_col.append(expr['IMG_SIZE'])     # img size
     expr_info_vals_col.append(expr['BATCH_SIZE'])   # batch size
     expr_info_vals_col.append(expr['NUM_EPOCHS'])   # number of epochs
