@@ -287,7 +287,12 @@ for name in result_dirpaths:
                     '', expr['IMG_SIZE'], expr['BATCH_SIZE']]
     summay_sh.write_column(info_beg_y,expr_x, summary_info)
 
-    #summary_expr_data = [mean_train_b_f1, mean_valid_b_f1, mean_train_m_f1, mean_valid_m_f1,
+    # Write summary data of an experiment
+    summary_expr_data = [
+        mean_train_b_f1, mean_valid_b_f1, mean_train_m_f1, mean_valid_m_f1, '',
+        mean_train_b_dice_obj, mean_valid_b_dice_obj, mean_train_m_dice_obj, 
+        mean_valid_m_dice_obj]
+    summay_sh.write_column(mean_f1s_beg_y,expr_x, summary_expr_data)
     # Write summary data
     t_b_f1  = KeyTup(train_data,num_filters,num_layers,'train','benign','f1')
     t_b_dice= KeyTup(train_data,num_filters,num_layers,'train','benign','dice')
