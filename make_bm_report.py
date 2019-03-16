@@ -71,21 +71,6 @@ is_result = lambda p:('[b' in p) or ('[m' in p)
 result_dirpaths = human_sorted(filter(is_result, os.listdir(root)))
 #print(result_dirpaths,sep='\n')
 
-expr_info_keys_col = [
-    'expr name', 
-    'train data', 
-    '#filters',
-    '#layers',
-    '',
-    'model',
-    'optimizer',
-    '',
-    'img size',
-    'batch size',
-    '#epochs',
-    '#SPE',
-]
-
 workbook = xlsxwriter.Workbook('test.xlsx')
 summay_sh = workbook.add_worksheet('summary')
 key_format = workbook.add_format({'bold':True})
@@ -110,6 +95,50 @@ data_keys_col = [
     'train malignant',
     'valid malignant',
 ]
+
+# Calculate position of key cells
+info_beg_y = 1
+mean_f1s_beg_y = info_beg_y + len(summary_info_keys_col) + 1
+mean_dices_beg_y = mean_f1s_beg_y + len(data_keys_col) + 1
+
+ulti_info_beg_y = mean_dices_beg_y + len(data_keys_col) + 3
+ulti_mean_f1s_beg_y = ulti_info_beg_y + len(ultimate_summary_info_keys_col) + 1
+ulti_mean_dices_beg_y = ulti_mean_f1s_beg_y + len(data_keys_col) + 1
+
+# Write labels
+summay_sh.write(0,0, 'All Experiments', key_format)
+summay_sh.write(mean_f1s_beg_y,0, 'mean f1 score', key_format)
+summay_sh.write(mean_dices_beg_y,0, 'mean f1 score', key_format)
+
+summay_sh.write(ulti_info_beg_y-1,0, 'Summary', key_format)
+summay_sh.write(ulti_mean_f1s_beg_y,0, 'mean f1 score', key_format)
+summay_sh.write(ulti_mean_dices_beg_y,0, 'mean f1 score', key_format)
+
+# Write key columns
+summay_sh.write_column(info_beg_y,1, summary_info_keys_col, key_format)
+summay_sh.write_column(mean_f1s_beg_y,1, data_keys_col, key_format)
+summay_sh.write_column(mean_dices_beg_y,1, data_keys_col, key_format)
+
+summay_sh.write_column(ulti_info_beg_y,1, ultimate_summary_info_keys_col, key_format)
+summay_sh.write_column(ulti_mean_f1s_beg_y,1, data_keys_col, key_format)
+summay_sh.write_column(ulti_mean_dices_beg_y,1, data_keys_col, key_format)
+
+
+expr_info_keys_col = [
+    'expr name', 
+    'train data', 
+    '#filters',
+    '#layers',
+    '',
+    'model',
+    'optimizer',
+    '',
+    'img size',
+    'batch size',
+    '#epochs',
+    '#SPE',
+]
+
 for name in result_dirpaths:
     valid_fname = name.replace('[','__').replace(']','__')
     expr_sh = workbook.add_worksheet(valid_fname)
