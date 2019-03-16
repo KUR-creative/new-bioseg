@@ -205,11 +205,11 @@ for name in result_dirpaths:
     mean_valid_m_dice_obj = mean(valid_malignants_dice_objs)
 
     # Write valid/train-benign/malignant-f1/dice_obj key cells
-    expr_sh.write( 'E9',           'means'); expr_sh.write( 'F9',      'f1 score'); expr_sh.write( 'G9',            'dice_obj')
-    expr_sh.write('E10',    'train benign'); expr_sh.write('F10', mean_train_b_f1); expr_sh.write('G10', mean_train_b_dice_obj)
-    expr_sh.write('E11',    'valid benign'); expr_sh.write('F11', mean_valid_b_f1); expr_sh.write('G11', mean_valid_b_dice_obj)
-    expr_sh.write('E12', 'train malignant'); expr_sh.write('F12', mean_train_m_f1); expr_sh.write('G12', mean_train_m_dice_obj)
-    expr_sh.write('E13', 'valid malignant'); expr_sh.write('F13', mean_valid_m_f1); expr_sh.write('G13', mean_valid_m_dice_obj)
+    expr_sh.write( 'E9',     'means',key_format); expr_sh.write( 'F9', 'f1 score',key_format); expr_sh.write( 'G9', 'dice_obj',key_format)
+    expr_sh.write('E10',    'train benign',key_format); expr_sh.write('F10', mean_train_b_f1); expr_sh.write('G10', mean_train_b_dice_obj)
+    expr_sh.write('E11',    'valid benign',key_format); expr_sh.write('F11', mean_valid_b_f1); expr_sh.write('G11', mean_valid_b_dice_obj)
+    expr_sh.write('E12', 'train malignant',key_format); expr_sh.write('F12', mean_train_m_f1); expr_sh.write('G12', mean_train_m_dice_obj)
+    expr_sh.write('E13', 'valid malignant',key_format); expr_sh.write('F13', mean_valid_m_f1); expr_sh.write('G13', mean_valid_m_dice_obj)
 
     print(train_benigns_f1s)
     print(valid_benigns_f1s)
