@@ -23,6 +23,43 @@ def human_sorted(iterable):
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(iterable, key = alphanum_key)
 
+benigns =\
+['testA_1', 'testA_10', 'testA_11', 'testA_18', 'testA_19',
+'testA_2', 'testA_20', 'testA_21', 'testA_25', 'testA_27',
+'testA_28', 'testA_30', 'testA_31', 'testA_33', 'testA_35',
+'testA_36', 'testA_37', 'testA_4', 'testA_40', 'testA_43',
+'testA_44', 'testA_46', 'testA_49', 'testA_5', 'testA_50',
+'testA_52', 'testA_54', 'testA_55', 'testA_58', 'testA_6',
+'testA_60', 'testA_7', 'testA_9', 'testB_17', 'testB_4',
+'testB_5', 'testB_7', 'train_12', 'train_15', 'train_2',
+'train_20', 'train_21', 'train_22', 'train_25', 'train_30',
+'train_32', 'train_33', 'train_34', 'train_38', 'train_4',
+'train_45', 'train_46', 'train_47', 'train_51', 'train_52',
+'train_53', 'train_55', 'train_56', 'train_59', 'train_6',
+'train_61', 'train_62', 'train_63', 'train_64', 'train_65',
+'train_67', 'train_69', 'train_72', 'train_79', 'train_8',
+'train_80', 'train_84', 'train_85', 'train_9',]
+malignants =\
+['testA_12', 'testA_13', 'testA_14', 'testA_15', 'testA_16',
+'testA_17', 'testA_22', 'testA_23', 'testA_24', 'testA_26',
+'testA_29', 'testA_3', 'testA_32', 'testA_34', 'testA_38',
+'testA_39', 'testA_41', 'testA_42', 'testA_45', 'testA_47',
+'testA_48', 'testA_51', 'testA_53', 'testA_56', 'testA_57',
+'testA_59', 'testA_8', 'testB_1', 'testB_10', 'testB_11',
+'testB_12', 'testB_13', 'testB_14', 'testB_15', 'testB_16',
+'testB_18', 'testB_19', 'testB_2', 'testB_20', 'testB_3',
+'testB_6', 'testB_8', 'testB_9', 'train_1', 'train_10',
+'train_11', 'train_13', 'train_14', 'train_16', 'train_17',
+'train_18', 'train_19', 'train_23', 'train_24', 'train_26',
+'train_27', 'train_28', 'train_29', 'train_3', 'train_31',
+'train_35', 'train_36', 'train_37', 'train_39', 'train_40',
+'train_41', 'train_42', 'train_43', 'train_44', 'train_48',
+'train_49', 'train_5', 'train_50', 'train_54', 'train_57',
+'train_58', 'train_60', 'train_66', 'train_68', 'train_7',
+'train_70', 'train_71', 'train_73', 'train_74', 'train_75',
+'train_76', 'train_77', 'train_78', 'train_81', 'train_82',
+'train_83',]
+
 root = '.'
 is_result = lambda p:('[b' in p) or ('[m' in p)
 result_dirpaths = human_sorted(filter(is_result, os.listdir(root)))
