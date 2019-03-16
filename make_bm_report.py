@@ -158,7 +158,9 @@ KeyTup = namedtuple(
     'KeyTup', 'BMA n_filters n_layers tv bm f1_dice') 
     #Benign/Malignant/All int int train/valid benign/malignant f1/dice 
 summary_dic = {}
-for name in result_dirpaths:
+
+from tqdm import tqdm
+for name in tqdm(result_dirpaths):
     valid_fname = name.replace('[','__').replace(']','__')
     expr_sh = workbook.add_worksheet(valid_fname)
 
