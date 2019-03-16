@@ -87,9 +87,29 @@ expr_info_keys_col = [
 ]
 
 workbook = xlsxwriter.Workbook('test.xlsx')
-#summay_sh = workbook.add_worksheet('summary')
+summay_sh = workbook.add_worksheet('summary')
 key_format = workbook.add_format({'bold':True})
 
+summary_info_keys_col = [
+    'expr name', 
+    'train data', 
+    '#filters',
+    '#layers',
+    '',
+    'img size',
+    'batch size',
+]
+ultimate_summary_info_keys_col = [
+    'train data', 
+    '#filters',
+    '#layers',
+]
+data_keys_col = [
+    'train benign',
+    'valid benign',
+    'train malignant',
+    'valid malignant',
+]
 for name in result_dirpaths:
     valid_fname = name.replace('[','__').replace(']','__')
     expr_sh = workbook.add_worksheet(valid_fname)
