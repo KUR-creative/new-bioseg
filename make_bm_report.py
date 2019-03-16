@@ -109,11 +109,11 @@ ulti_mean_dices_beg_y = ulti_mean_f1s_beg_y + len(data_keys_col) + 1
 # Write labels
 summay_sh.write(0,0, 'All Experiments', key_format)
 summay_sh.write(mean_f1s_beg_y,0, 'mean f1 score', key_format)
-summay_sh.write(mean_dices_beg_y,0, 'mean f1 score', key_format)
+summay_sh.write(mean_dices_beg_y,0, 'mean dice_obj', key_format)
 
 summay_sh.write(ulti_info_beg_y-1,0, 'Summary', key_format)
 summay_sh.write(ulti_mean_f1s_beg_y,0, 'mean f1 score', key_format)
-summay_sh.write(ulti_mean_dices_beg_y,0, 'mean f1 score', key_format)
+summay_sh.write(ulti_mean_dices_beg_y,0, 'mean dice_obj', key_format)
 
 # Write key columns
 summay_sh.write_column(info_beg_y,1, summary_info_keys_col, key_format)
@@ -287,6 +287,7 @@ for name in result_dirpaths:
                     '', expr['IMG_SIZE'], expr['BATCH_SIZE']]
     summay_sh.write_column(info_beg_y,expr_x, summary_info)
 
+    #summary_expr_data = [mean_train_b_f1, mean_valid_b_f1, mean_train_m_f1, mean_valid_m_f1,
     # Write summary data
     t_b_f1  = KeyTup(train_data,num_filters,num_layers,'train','benign','f1')
     t_b_dice= KeyTup(train_data,num_filters,num_layers,'train','benign','dice')
