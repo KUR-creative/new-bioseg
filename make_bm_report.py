@@ -72,7 +72,9 @@ is_result = lambda p:('[b' in p) or ('[m' in p)
 result_dirpaths = human_sorted(filter(is_result, os.listdir(root)))
 #print(result_dirpaths,sep='\n')
 
-workbook = xlsxwriter.Workbook(sys.argv[1])
+import sys
+xlsx_name = sys.argv[1] 
+workbook = xlsxwriter.Workbook(xlsx_name)
 summay_sh = workbook.add_worksheet('summary')
 key_format = workbook.add_format({'bold':True})
 
