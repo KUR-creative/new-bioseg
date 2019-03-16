@@ -292,8 +292,7 @@ for name in tqdm(result_dirpaths):
     # Write summary data of an experiment
     summary_expr_data = [
         mean_train_b_f1, mean_valid_b_f1, mean_train_m_f1, mean_valid_m_f1, '',
-        mean_train_b_dice_obj, mean_valid_b_dice_obj, mean_train_m_dice_obj, 
-        mean_valid_m_dice_obj]
+        mean_train_b_dice_obj, mean_valid_b_dice_obj, mean_train_m_dice_obj, mean_valid_m_dice_obj]
     summay_sh.write_column(mean_f1s_beg_y,expr_x, summary_expr_data)
     # Write summary data
     t_b_f1  = KeyTup(train_data,num_filters,num_layers,'train','benign','f1')
@@ -316,12 +315,12 @@ for name in tqdm(result_dirpaths):
     set_list(summary_dic, v_m_f1)
     set_list(summary_dic, v_m_dice)
     summary_dic[t_b_f1].append(  mean_train_b_f1)      
-    summary_dic[t_b_dice].append(mean_train_b_f1)      
+    summary_dic[t_b_dice].append(mean_train_b_dice_obj)      
     summary_dic[t_m_f1].append(  mean_train_m_f1)      
-    summary_dic[t_m_dice].append(mean_train_m_f1)      
-    summary_dic[v_b_f1].append(  mean_valid_b_dice_obj)  
+    summary_dic[t_m_dice].append(mean_train_m_dice_obj)      
+    summary_dic[v_b_f1].append(  mean_valid_b_f1)  
     summary_dic[v_b_dice].append(mean_valid_b_dice_obj)
-    summary_dic[v_m_f1].append(  mean_valid_m_dice_obj)  
+    summary_dic[v_m_f1].append(  mean_valid_m_f1)  
     summary_dic[v_m_dice].append(mean_valid_m_dice_obj)
     
     '''
