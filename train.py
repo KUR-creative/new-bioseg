@@ -17,6 +17,7 @@ from segmentation_models import Unet
 from segmentation_models.utils import set_trainable
 
 from metrics import jaccard_coefficient, weighted_categorical_crossentropy, mean_iou
+from metrics import jaccard_distance
 
 import evaluator
 import my_model
@@ -218,10 +219,16 @@ def main(experiment_yml_path):
             num_classes=NUM_CLASSES,
             num_maxpool=NUM_MAXPOOL,
             num_filters=NUM_FILTERS)
+
+    if config.get('LOSS') is None: #default :TODO:remove it!
+        loss = weighted_categorical_crossentropy(weights[:NUM_CLASSES])
+    elif config.get('LOSS') == 'jaccard_distance':
+        loss = jaccard_distance(NUM_CLASSES)
+
     model.compile(
         optimizer=OPTIMIZER,
         #optimizer='Adam', 
-        loss=weighted_categorical_crossentropy(weights[:NUM_CLASSES]),
+        loss=loss,
         metrics=[jaccard_coefficient]
         #metrics=[mean_iou]
     )
