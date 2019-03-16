@@ -13,6 +13,7 @@ def mean(values):
 def chk_nan2zero(x):
     return 0 if isnan(x) else x
 
+
 def filename_ext(path):
     name_ext = namedtuple('name_ext','name ext')
     return name_ext( *os.path.splitext(os.path.basename(path)) )
@@ -152,6 +153,11 @@ expr_info_keys_col = [
     '#SPE',
 ]
 
+from collections import namedtuple
+KeyTup = namedtuple(
+    'KeyTup', 'BMA n_filters n_layers tv bm f1_dice') 
+    #Benign/Malignant/All int int train/valid benign/malignant f1/dice 
+summary_dic = {}
 for name in result_dirpaths:
     valid_fname = name.replace('[','__').replace(']','__')
     expr_sh = workbook.add_worksheet(valid_fname)
@@ -277,12 +283,42 @@ for name in result_dirpaths:
     # Write summary info
     expr_x = num_expr + 2
     num_expr += 1
-    
     summary_info = [name, train_data, num_filters, num_layers, 
                     '', expr['IMG_SIZE'], expr['BATCH_SIZE']]
     summay_sh.write_column(info_beg_y,expr_x, summary_info)
 
-
+    # Write summary data
+    t_b_f1  = KeyTup(train_data,num_filters,num_layers,'train','benign','f1')
+    t_b_dice= KeyTup(train_data,num_filters,num_layers,'train','benign','dice')
+    t_m_f1  = KeyTup(train_data,num_filters,num_layers,'train','malignant','f1')
+    t_m_dice= KeyTup(train_data,num_filters,num_layers,'train','malignant','dice')
+    v_b_f1  = KeyTup(train_data,num_filters,num_layers,'valid','benign','f1')
+    v_b_dice= KeyTup(train_data,num_filters,num_layers,'valid','benign','dice')
+    v_m_f1  = KeyTup(train_data,num_filters,num_layers,'valid','malignant','f1')
+    v_m_dice= KeyTup(train_data,num_filters,num_layers,'valid','malignant','dice')
+    def set_list(dic, key):
+        if dic.get(key) == None:
+            dic[key] = []
+    set_list(summary_dic, t_b_f1)
+    set_list(summary_dic, t_b_dice)
+    set_list(summary_dic, t_m_f1)
+    set_list(summary_dic, t_m_dice)
+    set_list(summary_dic, v_b_f1)
+    set_list(summary_dic, v_b_dice)
+    set_list(summary_dic, v_m_f1)
+    set_list(summary_dic, v_m_dice)
+    summary_dic[t_b_f1].append(  mean_train_b_f1)      
+    summary_dic[t_b_dice].append(mean_train_b_f1)      
+    summary_dic[t_m_f1].append(  mean_train_m_f1)      
+    summary_dic[t_m_dice].append(mean_train_m_f1)      
+    summary_dic[v_b_f1].append(  mean_valid_b_dice_obj)  
+    summary_dic[v_b_dice].append(mean_valid_b_dice_obj)
+    summary_dic[v_m_f1].append(  mean_valid_m_dice_obj)  
+    summary_dic[v_m_dice].append(mean_valid_m_dice_obj)
+    
+    print('-----------------------------')
+    for k,v in summary_dic.items():
+        print(k,v)
     '''
     print(train_benigns_f1s)
     print(valid_benigns_f1s)
