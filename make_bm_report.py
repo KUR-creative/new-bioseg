@@ -4,6 +4,12 @@ from collections import namedtuple
 import numpy as np
 from math import isnan
 
+def mean(values):
+    if len(values) == 0:
+        return None
+    else:
+        return np.asscalar(np.mean(values))
+
 def chk_nan2zero(x):
     return 0 if isnan(x) else x
 
@@ -158,10 +164,10 @@ for name in result_dirpaths:
     expr_sh.write_column(valid_beg_y,2, valid_dice_objs) 
 
     # Calculate mean values
-    mean_train_f1 = np.asscalar(np.mean(train_f1s))
-    mean_valid_f1 = np.asscalar(np.mean(valid_f1s))
-    mean_train_dice_obj = np.asscalar(np.mean(train_dice_objs))
-    mean_valid_dice_obj = np.asscalar(np.mean(valid_dice_objs))
+    mean_train_f1 = mean(train_f1s)
+    mean_valid_f1 = mean(valid_f1s)
+    mean_train_dice_obj = mean(train_dice_objs)
+    mean_valid_dice_obj = mean(valid_dice_objs)
     # Write mean values
     expr_sh.write(train_mean_y,0, 'train mean', key_format)
     expr_sh.write(train_mean_y,1, mean_train_f1)
@@ -170,14 +176,46 @@ for name in result_dirpaths:
     expr_sh.write(valid_mean_y,1, mean_valid_f1)
     expr_sh.write(valid_mean_y,2, mean_valid_dice_obj)
 
-    # Write valid/train-benign/malignant-f1/dice_obj key cells
-    expr_sh.write('E9', 'means') 
-    expr_sh.write('F9', 'f1 score') 
-    expr_sh.write('G9', 'dice_obj')
-    expr_sh.write('E10', 'train benign') 
-    expr_sh.write('E11', 'valid benign') 
-    expr_sh.write('E12', 'train malignant') 
-    expr_sh.write('E13', 'valid malignant') 
+    # Make img_name:(f1,dice_obj) dict
+    train_dic = {k:tup for k,tup in zip(train_names, zip(train_f1s,train_dice_objs))}
+    valid_dic = {k:tup for k,tup in zip(valid_names, zip(valid_f1s,valid_dice_objs))}
     # Calculate benign/malignant mean values
+    def values(keys, k_tup_dic, val_idx):
+        return list(\
+            map(lambda tup:tup[val_idx],
+                filter(lambda v:v is not None,
+                       (k_tup_dic.get(k) for k in keys)))
+        )
+
+    train_benigns_f1s = values(benigns, train_dic, 0)
+    valid_benigns_f1s = values(benigns, valid_dic, 0)
+    train_malignants_f1s = values(malignants, train_dic, 0)
+    valid_malignants_f1s = values(malignants, valid_dic, 0) 
+    train_benigns_dice_objs = values(benigns, train_dic, 1)
+    valid_benigns_dice_objs = values(benigns, valid_dic, 1)
+    train_malignants_dice_objs = values(malignants, train_dic, 1)
+    valid_malignants_dice_objs = values(malignants, valid_dic, 1) 
+    mean_train_b_f1 = mean(train_benigns_f1s)
+    mean_valid_b_f1 = mean(valid_benigns_f1s)
+    mean_train_m_f1 = mean(train_malignants_f1s)
+    mean_valid_m_f1 = mean(valid_malignants_f1s)
+    mean_train_b_dice_obj = mean(train_benigns_dice_objs)
+    mean_valid_b_dice_obj = mean(valid_benigns_dice_objs)
+    mean_train_m_dice_obj = mean(train_malignants_dice_objs)
+    mean_valid_m_dice_obj = mean(valid_malignants_dice_objs)
+
+    # Write valid/train-benign/malignant-f1/dice_obj key cells
+    expr_sh.write( 'E9',           'means'); expr_sh.write( 'F9',      'f1 score'); expr_sh.write( 'G9',            'dice_obj')
+    expr_sh.write('E10',    'train benign'); expr_sh.write('F10', mean_train_b_f1); expr_sh.write('G10', mean_train_b_dice_obj)
+    expr_sh.write('E11',    'valid benign'); expr_sh.write('F11', mean_valid_b_f1); expr_sh.write('G11', mean_valid_b_dice_obj)
+    expr_sh.write('E12', 'train malignant'); expr_sh.write('F12', mean_train_m_f1); expr_sh.write('G12', mean_train_m_dice_obj)
+    expr_sh.write('E13', 'valid malignant'); expr_sh.write('F13', mean_valid_m_f1); expr_sh.write('G13', mean_valid_m_dice_obj)
+
+    print(train_benigns_f1s)
+    print(valid_benigns_f1s)
+    print(train_malignants_f1s)
+    print(valid_malignants_f1s)
+
+    print(name)
     
 workbook.close()
