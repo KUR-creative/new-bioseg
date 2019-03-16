@@ -123,7 +123,17 @@ summay_sh.write_column(ulti_info_beg_y,1, ultimate_summary_info_keys_col, key_fo
 summay_sh.write_column(ulti_mean_f1s_beg_y,1, data_keys_col, key_format)
 summay_sh.write_column(ulti_mean_dices_beg_y,1, data_keys_col, key_format)
 
-
+# Write ulti info settings
+num_filters_col= [32,32,64,64]*3
+num_layers_col = [34,42,34,42]*3
+benign_format = workbook.add_format({'bg_color':'#90EE90'})     # lightgreen
+malignant_format = workbook.add_format({'bg_color':'#FFA500'})  # orange
+all_format = workbook.add_format({'bg_color':'#87CEFA'})        # lightskyblue
+summay_sh.write_row(ulti_info_beg_y,  2, ['Benign']*4, benign_format)
+summay_sh.write_row(ulti_info_beg_y,  6, ['Malignant']*4, malignant_format)
+summay_sh.write_row(ulti_info_beg_y, 10, ['All']*4, all_format)
+summay_sh.write_row(ulti_info_beg_y+1,2, num_filters_col)
+summay_sh.write_row(ulti_info_beg_y+2,2, num_layers_col)
 expr_info_keys_col = [
     'expr name', 
     'train data', 
