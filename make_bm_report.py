@@ -340,4 +340,32 @@ print('-----------------------------')
 for k,v in summary_dic.items():
     print(k,v)
 
+def keytup2yx(keytup):
+    BMA,n_filters,n_layers,tv,bm,f1_dice = keytup
+    #f1_beg_yx  = (  mean_f1s_beg_y,2)
+    #dice_beg_yx= (mean_dices_beg_y,2)
+
+    d_BMA = dict(Benign=0, Malignant=4, All=8)
+    d_n_filters= {32:0, 64:2}
+    d_n_layers = {34:0, 42:1}
+
+    y = ulti_mean_f1s_beg_y
+    x = 2 + d_BMA[BMA] + d_n_filters[n_filters] + d_n_layers[n_layers]
+    return y,x
+
+y,x = keytup2yx(KeyTup('Benign', 32,34, 'train','benign','f1')); 
+summay_sh.write(y,x,'b 32 34')
+y,x = keytup2yx(KeyTup('Benign', 64,34, 'train','benign','dice')); 
+summay_sh.write(y,x,'b 64 34')
+y,x = keytup2yx(KeyTup('Malignant', 32,34, 'valid','malignant','dice')); 
+summay_sh.write(y,x,'m 32 34')
+y,x = keytup2yx(KeyTup('All', 64,34, 'valid','malignant','f1')); 
+summay_sh.write(y,x,'a 64 34')
+
+for keytup,v in summary_dic.items():
+    BMA,n_filters,n_layers,tv,bm,f1_dice = keytup
+    y,x = keytup2yx(keytup); 
+    s = '%s %d %d %s %s %s' % keytup
+    summay_sh.write(y,x, s)
+
 workbook.close()
