@@ -336,9 +336,9 @@ for k,val_list in summary_dic.items():
         raise ValueError("Impossible! %s" % str(val_list))
     else:
         summary_dic[k] = mean(val_list)
-print('-----------------------------')
-for k,v in summary_dic.items():
-    print(k,v)
+#print('-----------------------------')
+#for k,v in summary_dic.items():
+    #print(k,v)
 
 def keytup2yx(keytup):
     BMA,n_filters,n_layers,tv,bm,f1_dice = keytup
@@ -357,7 +357,7 @@ def keytup2yx(keytup):
     x = 2 + d_BMA[BMA] + d_n_filters[n_filters] + d_n_layers[n_layers]
     return y,x
 
-for keytup,v in summary_dic.items():
+for keytup in summary_dic.keys():
     BMA,n_filters,n_layers,tv,bm,f1_dice = keytup
     y,x = keytup2yx(keytup); 
     s = '{} {} {} {} {} {}'.format( *[str(s)[:2] for s in keytup] )
