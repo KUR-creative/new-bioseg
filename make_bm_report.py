@@ -69,7 +69,7 @@ malignants =\
 root = '.'
 is_result = lambda p:('[b' in p) or ('[m' in p)
 result_dirpaths = human_sorted(filter(is_result, os.listdir(root)))
-print(result_dirpaths,sep='\n')
+#print(result_dirpaths,sep='\n')
 
 expr_info_keys_col = [
     'expr name', 
@@ -211,11 +211,12 @@ for name in result_dirpaths:
     expr_sh.write('E12', 'train malignant',key_format); expr_sh.write('F12', mean_train_m_f1); expr_sh.write('G12', mean_train_m_dice_obj)
     expr_sh.write('E13', 'valid malignant',key_format); expr_sh.write('F13', mean_valid_m_f1); expr_sh.write('G13', mean_valid_m_dice_obj)
 
+    '''
     print(train_benigns_f1s)
     print(valid_benigns_f1s)
     print(train_malignants_f1s)
     print(valid_malignants_f1s)
-
     print(name)
+    '''
     
 workbook.close()
