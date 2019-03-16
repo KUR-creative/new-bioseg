@@ -50,6 +50,12 @@ def filename_ext(path):
     name_ext = namedtuple('name_ext','name ext')
     return name_ext( *os.path.splitext(os.path.basename(path)) )
 
+def filename(path):
+    return filename_ext(path).name
+
+def extension(path):
+    return filename_ext(path).ext
+
 def unique_colors(img):
     return np.unique(img.reshape(-1,img.shape[2]), axis=0)
 

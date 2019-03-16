@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from utils import decategorize
 from utils import human_sorted, file_paths, load_imgs, filename_ext
-from metric import advanced_metric
+from metric import advanced_metric, my_old_metric
 def iou(y_true,y_pred,thr=0.5):
     y_true = (y_true.flatten() >= thr).astype(np.uint8)
     y_pred = (y_pred.flatten() >= thr).astype(np.uint8)
@@ -360,12 +360,14 @@ def eval_postprocessed(pred_dir, ans_dir):
     test_pred_dir  = os.path.join(pred_dir,'test')
     test_ans_dir   = os.path.join(ans_dir, 'test')
 
-    train_pred_paths = human_sorted(file_paths(train_pred_dir))
+    is_result = lambda s:'_result' in str(s)
+    train_pred_paths = human_sorted(filter(is_result,file_paths(train_pred_dir)))
     train_ans_paths  = human_sorted(file_paths(train_ans_dir))
-    valid_pred_paths = human_sorted(file_paths(valid_pred_dir))
+    valid_pred_paths = human_sorted(filter(is_result,file_paths(valid_pred_dir)))
     valid_ans_paths  = human_sorted(file_paths(valid_ans_dir))
-    test_pred_paths  = human_sorted(file_paths(test_pred_dir))
+    test_pred_paths  = human_sorted(filter(is_result,file_paths(test_pred_dir)))
     test_ans_paths   = human_sorted(file_paths(test_ans_dir))
+    #print(*list(zip(train_pred_paths,train_ans_paths)),sep='\n'); exit()
 
     # tups = tuples<name,f1,dice_obj>
     train_tups = ret(train_pred_paths, train_ans_paths)
@@ -384,6 +386,54 @@ def eval_postprocessed(pred_dir, ans_dir):
     '''
     #return pred_paths,ans_paths
 
+def eval_old_and_new(pred_dir, ans_dir):
+    def result_tuples(names,predictions,answers):
+        return (
+            (name,) + my_old_metric(ans,pred) + advanced_metric(ans,pred) 
+            for name,pred,ans
+            in zip(names,predictions,answers)
+        )
+        '''
+        #DEBUG
+        for pred,ans in zip(predictions,answers):
+            cv2.imshow('pred', pred)
+            cv2.imshow('ans', ans); cv2.waitKey(0)
+        exit()
+        '''
+
+    def ret(pred_paths, ans_paths):
+        names = map(lambda p:filename_ext(p).name, pred_paths)
+        predictions = load_imgs(pred_paths, cv2.IMREAD_GRAYSCALE)
+        answers = load_imgs(ans_paths, cv2.IMREAD_GRAYSCALE)
+
+        return result_tuples(names,predictions,answers)
+        '''
+        for name, f1, dice_obj in gen:
+            print(name, f1, dice_obj, sep='\t')
+        '''
+
+    train_pred_dir = os.path.join(pred_dir,'train')
+    train_ans_dir  = os.path.join(ans_dir, 'train')
+    valid_pred_dir = os.path.join(pred_dir,'valid')
+    valid_ans_dir  = os.path.join(ans_dir, 'valid')
+    test_pred_dir  = os.path.join(pred_dir,'test')
+    test_ans_dir   = os.path.join(ans_dir, 'test')
+
+    is_result = lambda s:'_result' in str(s)
+    train_pred_paths = human_sorted(filter(is_result,file_paths(train_pred_dir)))
+    train_ans_paths  = human_sorted(file_paths(train_ans_dir))
+    valid_pred_paths = human_sorted(filter(is_result,file_paths(valid_pred_dir)))
+    valid_ans_paths  = human_sorted(file_paths(valid_ans_dir))
+    test_pred_paths  = human_sorted(filter(is_result,file_paths(test_pred_dir)))
+    test_ans_paths   = human_sorted(file_paths(test_ans_dir))
+    #print(*list(zip(train_pred_paths,train_ans_paths)),sep='\n'); exit()
+
+    # tups = tuples<name,f1,dice_obj>
+    train_tups = ret(train_pred_paths, train_ans_paths)
+    valid_tups = ret(valid_pred_paths, valid_ans_paths)
+    test_tups  = ret(test_pred_paths,  test_ans_paths)
+    return train_tups,valid_tups,test_tups
+
 import sys
 if __name__ == '__main__':
     if len(sys.argv) == 1 + 2:
@@ -401,6 +451,21 @@ if __name__ == '__main__':
         print('-------test-------')
         for name,f1,dice_obj in test_tups:
             print(name, f1, dice_obj, sep=',')
+    if len(sys.argv) == 1 + 3 and sys.argv[3] == 'old':
+        train_tups,valid_tups,test_tups \
+            = eval_old_and_new(sys.argv[1], sys.argv[2])
+            #= eval_postprocessed('./eval_postprocessed/thick2/', './eval_postprocessed/GT/')
+        print('-------train-------')
+        #for name, old_f1,old_dice, f1,dice_obj in train_tups:
+            #print(name, old_f1,old_dice, f1,dice_obj, sep=',')
+
+        print('-------valid-------')
+        for name, old_f1,old_dice, f1,dice_obj in valid_tups:
+            print(name, old_f1,old_dice, f1,dice_obj, sep=',')
+
+        print('-------test-------')
+        for name, old_f1,old_dice, f1,dice_obj in test_tups:
+            print(name, old_f1,old_dice, f1,dice_obj, sep=',')
     elif len(sys.argv) == 1 + 3: # eval with advanced_metric
         model_path = sys.argv[1]
         dataset_dict_path = sys.argv[2]
@@ -410,6 +475,7 @@ if __name__ == '__main__':
     else:
         print('Usage: python evaluator.py predict_dirpath GT_dirpath')  
         print('Usage: python evaluator.py model_path dataset_dict_path experiment_yml_path')  
+        print('Usage: python evaluator.py model_path dataset_dict_path old')  
 
 
     '''
