@@ -150,10 +150,40 @@ def object_dice(tp_tab, tp_yxs, ans_areas, pred_areas):
     #print(g_dice, s_dice)
     return float(0.5 * (g_dice + s_dice))
 
+def my_old_metric(ans,pred):
+    ans = (ans >= 0.5).astype(np.uint8) * 255
+    pred = (pred >= 0.5).astype(np.uint8) * 255
+    ans_ouput = cv2.connectedComponentsWithStats(ans, 4)
+    ans = ans_ouput[1]
+    ans_areas = ans_ouput[2][:,cv2.CC_STAT_AREA]
+    #print(type(ans),np.unique(ans))
+    #cv2.imshow('ans',ans); cv2.waitKey(0)
+    #print(' ans:',ans_areas)
+    #for i in range(len(ans_areas)): cv2.imshow('ans', (ans == i).astype(np.uint8) * 255); cv2.waitKey(0)
+
+    pred_ouput = cv2.connectedComponentsWithStats(pred, 4)
+    pred = pred_ouput[1]
+    pred_areas = pred_ouput[2][:,cv2.CC_STAT_AREA]
+    #print(type(pred),np.unique(pred))
+    #print('pred:',pred_areas)
+    #for i in range(len(pred_areas)): cv2.imshow('pred', (pred == i).astype(np.uint8) * 255); cv2.waitKey(0)
+
+    tp_tab = tp_table(intersection_table(ans,len(ans_areas), 
+                                         pred,len(pred_areas)))
+    #print('tp_tab\n',tp_tab)
+    tp, fp, fn, tp_yxs = confusion_stats(tp_tab)
+    #print('tp_yxs', tp_yxs)
+    f1 = f1score(tp,fp,fn)
+    dice_obj = object_dice(tp_tab, tp_yxs, ans_areas,pred_areas)
+
+    return f1, dice_obj
+
 from oct2py import Oct2Py
 #oct2py = Oct2Py(temp_dir='/run/shm')#ubuntu
 oct2py  = Oct2Py(temp_dir='/tmp')#ubuntu: use tmpfs...
 def advanced_metric(ans, pred):
+    #cv2.imshow('pred', pred)
+    #cv2.imshow('ans', ans); cv2.waitKey(0)
     ans = (ans >= 0.5).astype(np.uint8) * 255
     pred = (pred >= 0.5).astype(np.uint8) * 255
 
