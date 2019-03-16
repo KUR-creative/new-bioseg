@@ -132,5 +132,15 @@ for name in result_dirpaths:
     expr_sh.write(valid_mean_y,0, 'valid mean', key_format)
     expr_sh.write(valid_mean_y,1, mean_valid_f1)
     expr_sh.write(valid_mean_y,2, mean_valid_dice_obj)
+
+    # Write valid/train-benign/malignant-f1/dice_obj key cells
+    expr_sh.write('E9', 'means') 
+    expr_sh.write('F9', 'f1 score') 
+    expr_sh.write('G9', 'dice_obj')
+    expr_sh.write('E10', 'train benign') 
+    expr_sh.write('E11', 'valid benign') 
+    expr_sh.write('E12', 'train malignant') 
+    expr_sh.write('E13', 'valid malignant') 
+    # Calculate benign/malignant mean values
     
 workbook.close()
