@@ -24,6 +24,21 @@ def jaccard_coefficient(y_true, y_pred, smooth=100, weight1=1.):
     jac = (intersection + smooth) / (sum_ - intersection + smooth)
     return jac
 
+def jaccard_distance(n_channels, smooth=1):
+    ''' 
+    Cacluate channel by channel intersection & union.
+    And then calculate smoothed jaccard_coefficient.
+    Finally, calculate jaccard_distance.
+    '''
+    axis = tuple(range(n_channels))
+    def jacc_dist(y_true, y_pred):
+        intersection = y_pred * y_true
+        sum_ = y_pred + y_true
+        numerator = K.sum(intersection, axis) + smooth
+        denominator = K.sum(sum_ - intersection, axis) + smooth
+        jacc =  K.mean(numerator / denominator)
+        return 1-jacc
+    return jacc_dist
 '''
 A weighted version of categorical_crossentropy for keras (2.0.6). 
 This lets you apply a weight to unbalanced classes.
@@ -54,3 +69,86 @@ def weighted_categorical_crossentropy(weights):
         loss = -K.sum(loss, -1)
         return loss
     return loss
+
+def jacc(y_pred,y_true, smooth=0.000001):
+    axis = tuple(range(len(y_pred.shape)))
+    intersection = y_pred * y_true
+    #print('i\n',intersection)
+    sum_ = y_pred + y_true
+    #print('s\n',sum_)
+    numerator = np.sum(intersection, axis) + smooth
+    #print('numerator',numerator)
+    denominator = np.sum(sum_ - intersection, axis) + smooth
+    #print('denominator',denominator)
+    jac =  np.mean(numerator / denominator)
+    return 1-jac
+
+import numpy as np
+import cv2
+if __name__ == '__main__':
+    p = np.array([
+        [[1,0],[1,0],[1,0]],
+        [[1,0],[1,0],[1,0]],
+        [[0,1],[0,1],[0,1]],
+    ]) 
+    p = np.array([
+        [[1,0,0],[1,0,0],[1,0,0]],
+        [[1,0,0],[1,0,0],[1,0,0]],
+        [[0,1,0],[0,1,0],[0,1,0]],
+    ]) 
+    t = np.array([
+        [[1,0,0],[1,0,0],[1,0,0]],
+        [[0,1,0],[0,1,0],[0,1,0]],
+        [[1,0,0],[1,0,0],[1,0,0]],
+    ]) 
+    #cv2.imshow('p',(p*t).astype(np.uint8)*255); cv2.waitKey(0)
+    #print(p*t)
+    a = np.array([
+        [[1,0,0],[1,0,0],[1,0,0]],
+        [[0,1,0],[0,1,0],[0,1,0]],
+        [[1,0,0],[1,0,0],[1,0,0]],
+        [[1,0,0],[1,0,0],[1,0,0]],
+    ]) 
+    b = np.array([
+        [[1,0],[1,0],[1,0]],
+        [[1,0],[1,0],[1,0]],
+        [[0,1],[0,1],[0,1]],
+        [[0,1],[0,1],[0,1]],
+    ]) 
+    c = np.array([
+        [[1,0],[1,0],[1,0]],
+        [[0,1],[0,1],[0,1]],
+        [[1,0],[1,0],[1,0]],
+        [[0,1],[0,1],[0,1]],
+    ]) 
+
+    b = np.array([
+        [1,1,1,1,1,1],
+        [1,1,1,1,1,1],
+        [1,1,1,1,1,1],
+        [1,1,1,1,1,1],
+    ]) 
+    c = np.array([
+        [1,1,1,1,1,1],
+        [1,1,1,1,1,1],
+        [0,0,0,0,0,0],
+        [0,0,0,0,0,0],
+    ]) 
+
+    b = np.array([
+        [[1,0],[1,0],[1,0]],
+        [[1,0],[1,0],[1,0]],
+        [[1,0],[1,0],[1,0]],
+        [[1,0],[1,0],[1,0]],
+    ]) 
+    c = np.array([
+        [[0,1],[0,1],[0,1]],
+        [[0,1],[0,1],[0,1]],
+        [[1,0],[1,0],[1,0]],
+        [[1,0],[1,0],[1,0]],
+    ]) 
+
+    b = c.copy()
+    print('jacc:', jacc(b,c))
+    #print('j sum',np.sum(j,axis=(0,1)))
+
