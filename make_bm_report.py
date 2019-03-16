@@ -349,23 +349,18 @@ def keytup2yx(keytup):
     d_n_filters= {32:0, 64:2}
     d_n_layers = {34:0, 42:1}
 
-    y = ulti_mean_f1s_beg_y
+    d_f1_dice = dict(f1=ulti_mean_f1s_beg_y, dice=ulti_mean_dices_beg_y)
+    d_bm = dict(benign=0, malignant=2)
+    d_tv = dict(train=0, valid=1)
+
+    y = d_f1_dice[f1_dice] + d_bm[bm] + d_tv[tv]
     x = 2 + d_BMA[BMA] + d_n_filters[n_filters] + d_n_layers[n_layers]
     return y,x
-
-y,x = keytup2yx(KeyTup('Benign', 32,34, 'train','benign','f1')); 
-summay_sh.write(y,x,'b 32 34')
-y,x = keytup2yx(KeyTup('Benign', 64,34, 'train','benign','dice')); 
-summay_sh.write(y,x,'b 64 34')
-y,x = keytup2yx(KeyTup('Malignant', 32,34, 'valid','malignant','dice')); 
-summay_sh.write(y,x,'m 32 34')
-y,x = keytup2yx(KeyTup('All', 64,34, 'valid','malignant','f1')); 
-summay_sh.write(y,x,'a 64 34')
 
 for keytup,v in summary_dic.items():
     BMA,n_filters,n_layers,tv,bm,f1_dice = keytup
     y,x = keytup2yx(keytup); 
-    s = '%s %d %d %s %s %s' % keytup
+    s = '{} {} {} {} {} {}'.format( *[str(s)[:2] for s in keytup] )
     summay_sh.write(y,x, s)
 
 workbook.close()
