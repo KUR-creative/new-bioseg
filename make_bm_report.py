@@ -134,6 +134,9 @@ summay_sh.write_row(ulti_info_beg_y,  6, ['Malignant']*4, malignant_format)
 summay_sh.write_row(ulti_info_beg_y, 10, ['All']*4, all_format)
 summay_sh.write_row(ulti_info_beg_y+1,2, num_filters_col)
 summay_sh.write_row(ulti_info_beg_y+2,2, num_layers_col)
+
+num_expr = 0
+
 expr_info_keys_col = [
     'expr name', 
     'train data', 
@@ -173,7 +176,8 @@ for name in result_dirpaths:
     else:
         train_data = 'All'
     expr_info_vals_col.append(train_data)           # train data
-    expr_info_vals_col.append(expr['NUM_FILTERS'])  # number of filters
+    num_filters = expr['NUM_FILTERS']
+    expr_info_vals_col.append(num_filters)  # number of filters
     if expr['NUM_MAXPOOL'] == 4:
         num_layers = 34
     elif expr['NUM_MAXPOOL'] == 5:
@@ -269,6 +273,15 @@ for name in result_dirpaths:
     expr_sh.write('E11',    'valid benign',key_format); expr_sh.write('F11', mean_valid_b_f1); expr_sh.write('G11', mean_valid_b_dice_obj)
     expr_sh.write('E12', 'train malignant',key_format); expr_sh.write('F12', mean_train_m_f1); expr_sh.write('G12', mean_train_m_dice_obj)
     expr_sh.write('E13', 'valid malignant',key_format); expr_sh.write('F13', mean_valid_m_f1); expr_sh.write('G13', mean_valid_m_dice_obj)
+
+    # Write summary info
+    expr_x = num_expr + 2
+    num_expr += 1
+    
+    summary_info = [name, train_data, num_filters, num_layers, 
+                    '', expr['IMG_SIZE'], expr['BATCH_SIZE']]
+    summay_sh.write_column(info_beg_y,expr_x, summary_info)
+
 
     '''
     print(train_benigns_f1s)
