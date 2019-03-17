@@ -24,7 +24,7 @@ import my_model
 
 #-------- data augmentation --------
 #def random_crop
-def augmenter(batch_size=4, crop_size=256, num_channels=3,
+def crop_augmenter(batch_size=4, crop_size=256, num_channels=3,
               crop_before_augs=(), crop_after_augs=()):
     n_img = batch_size
     size = crop_size
@@ -76,7 +76,7 @@ def batch_gen(imgs, masks, batch_size,
             mask_batch = np.array(mask_batch, np.float32)
 
         if img_aug:
-            img_batch = img_aug.augment_images(img_batch)
+            img_batch = img_aug.augment_images(img_batch.astype(np.float32))
         if mask_aug:
             mask_batch = mask_aug.augment_images(mask_batch)
 
@@ -123,16 +123,22 @@ def main(experiment_yml_path):
     MIN_LR = config['MIN_LR']
 
     aug,img_aug,mask_aug = None,None,None
-    aug = augmenter(BATCH_SIZE, IMG_SIZE, 1, 
-            crop_before_augs=[
-              iaa.Fliplr(0.5),
-              iaa.Flipud(0.5),
-              iaa.Affine(rotate=(-90,90),mode='reflect'),
-            ],
-            crop_after_augs=[
-              iaa.ElasticTransformation(alpha=(100,200),sigma=14,mode='reflect'),
-            ]
-          )
+    aug = crop_augmenter(
+        BATCH_SIZE, IMG_SIZE, 1, 
+        crop_before_augs=[
+          iaa.Fliplr(0.5),
+          iaa.Flipud(0.5),
+          iaa.Affine(rotate=(-90,90),mode='reflect'),
+        ],
+        crop_after_augs=[
+          iaa.ElasticTransformation(alpha=(100,200),sigma=14,mode='reflect'),
+        ]
+    )
+    img_aug = iaa.Sequential([
+        iaa.LinearContrast((0.8,1.2)),
+        iaa.Sharpen((0.0,0.3)),
+        iaa.AdditiveGaussianNoise(scale=(0.0,0.05)),
+    ])
 
     if DATASET_YML is None: 
         # save DATASET_YML
