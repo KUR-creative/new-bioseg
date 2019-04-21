@@ -291,6 +291,10 @@ def main(experiment_yml_path):
         evaluator.eval_and_save(
             model_path, DATASET_YML, experiment_yml_path
         )
+    elif EXPR_TYPE == 'manga':
+        evaluator.eval_and_save(
+            model_path, DATASET_YML, experiment_yml_path
+        )
     else:
         evaluator.eval_and_save_advanced_metric(
             model_path, DATASET_YML, experiment_yml_path
