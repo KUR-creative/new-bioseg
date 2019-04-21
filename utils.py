@@ -32,8 +32,9 @@ def human_sorted(iterable):
 def bgr_float32(uint8img):
     c = 1 if len(uint8img.shape) == 2 else 3
     h,w = uint8img.shape[:2]
-    uint8img = (uint8img / 255).astype(np.float32)
-    return uint8img.reshape((h,w,c))
+    float32img = (uint8img / 255).astype(np.float32)
+    #print('channel:',c)
+    return float32img.reshape((h,w,c))
 
 def bgr_uint8(float32img):
     return (float32img * 255).astype(np.uint8)
@@ -81,6 +82,22 @@ def load_imgs(img_paths, mode_flag=cv2.IMREAD_COLOR):
     return map(lambda path: bgr_float32(imread(path, mode_flag)), img_paths) 
 
 from keras.utils import to_categorical
+def categorize_with(img, origin_map):
+    colors = np.unique(img.reshape(-1,img.shape[2]), axis=0)
+    #print(colors, origin_map)
+    assert set(map(tuple, colors.tolist() )) <= set(map(tuple, origin_map.values() ))
+
+    h,w,_ = img.shape
+    n_classes = len(origin_map)
+    ret_img = np.zeros((h,w,n_classes))
+
+    img_b, img_g, img_r = np.rollaxis(img, axis=-1)
+    for i,(dst_color,(b,g,r)) in enumerate(origin_map.items()):
+        masks = (img_b == b) & (img_g == g) & (img_r == r) # if [0,0,0]
+        ret_img[masks] = dst_color
+        #print(dst_color)
+    return ret_img
+
 def categorize(img):
     colors = np.unique(img.reshape(-1,img.shape[2]), axis=0)
 
@@ -129,9 +146,56 @@ class test_categorize_func(unittest.TestCase):
              [[1.,1.,1.], [1.,1.,1.], [1.,1.,1.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],], 
              [[1.,1.,1.], [1.,1.,1.], [1.,1.,1.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],],])
 
+        self.wk_img = np.array(
+            [[[0.,0.,0.], [0.,0.,0.]],  
+             [[0.,0.,0.], [0.,0.,0.]],  
+             [[0.,0.,1.], [0.,0.,1.]],  
+             [[0.,0.,1.], [0.,0.,1.]],])
+
+        self.err_img = np.array(
+            [[[0.,0.,0.], [0.,0.,0.]],  
+             [[0.,0.,0.], [0.,0.,0.]],  
+             [[1.,1.,1.], [1.,1.,1.]],  
+             [[1.,1.,1.], [1.,1.,1.]],])
+
     def test_categorize3color(self):
         img = np.copy(self.img)
         categorized,origin_map = categorize(img)
+        decategorized = decategorize(categorized, origin_map)
+        self.assertTrue(np.alltrue(img == decategorized))
+
+    def test_if_img_has_color_not_in_origin_map_then_exception(self):
+        origin_map = {
+            (0.0, 0.0, 1.0): [1., 0., 0.],
+            (0.0, 1.0, 0.0): [0., 0., 1.],
+            (1.0, 0.0, 0.0): [0., 0., 0.]
+        }
+        with self.assertRaises(AssertionError):
+            categorized = categorize_with(self.err_img, origin_map)
+            print('\n------>\n',categorized)
+
+    def test_wk_img_categorize_with(self):
+        origin_map = {
+            (0.0, 0.0, 1.0): [1., 0., 0.],
+            (0.0, 1.0, 0.0): [0., 0., 1.],
+            (1.0, 0.0, 0.0): [0., 0., 0.]
+        }
+        img = np.copy(self.wk_img)
+        categorized = categorize_with(img, origin_map)
+
+        #cv2.imshow('origin', self.wk_img)
+        #cv2.imshow('categorized', categorized)
+        #cv2.waitKey(0)
+
+        self.assertEqual(categorized.shape[-1], 3)
+        expected = np.array(
+            [[[1.,0.,0.], [1.,0.,0.]],  
+             [[1.,0.,0.], [1.,0.,0.]],  
+             [[0.,1.,0.], [0.,1.,0.]],  
+             [[0.,1.,0.], [0.,1.,0.]],])
+        print(categorized)
+        self.assertTrue(np.alltrue(categorized == expected))
+
         decategorized = decategorize(categorized, origin_map)
         self.assertTrue(np.alltrue(img == decategorized))
 
@@ -148,6 +212,7 @@ class test_categorize_func(unittest.TestCase):
         decategorized = decategorize(categorized, origin_map)
         self.assertTrue(np.alltrue(img == decategorized))
 
+    @unittest.skip('no t.png')
     def test_real_img(self):
         img = bgr_float32(cv2.imread('../t.bmp'))
         categorized,origin_map = categorize(img)
