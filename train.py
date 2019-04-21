@@ -121,6 +121,10 @@ def main(experiment_yml_path):
     OPTIMIZER = config['OPTIMIZER']
     PATIENCE = config['PATIENCE']
     MIN_LR = config['MIN_LR']
+    if config.get('FILTER_VEC') is None:
+        FILTER_VEC = (3,3,1)
+    else:
+        FILTER_VEC = tuple(config['FILTER_VEC'])
 
     aug,img_aug,mask_aug = None,None,None
     aug = crop_augmenter(
@@ -224,7 +228,8 @@ def main(experiment_yml_path):
         model = my_model.unet(
             num_classes=NUM_CLASSES,
             num_maxpool=NUM_MAXPOOL,
-            num_filters=NUM_FILTERS)
+            num_filters=NUM_FILTERS,
+            filter_vec=FILTER_VEC)
 
     if config.get('LOSS') is None: #default :TODO:remove it!
         loss = weighted_categorical_crossentropy(weights[:NUM_CLASSES])
