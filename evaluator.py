@@ -3,9 +3,30 @@ from sklearn.metrics import confusion_matrix
 import traceback
 import numpy as np
 import cv2
-from utils import decategorize
+from utils import decategorize, categorize_with
 from utils import human_sorted, file_paths, load_imgs, filename_ext
 from metric import advanced_metric, my_old_metric
+
+def iou(y_true,y_pred,thr=0.5):
+    ''' 
+    Cacluate channel by channel intersection & union.
+    And then calculate smoothed jaccard_coefficient.
+    Finally, calculate jaccard_distance.
+    '''
+    axis = tuple(range(y_true.shape[-1]))
+    y_true = (y_true >= thr).astype(np.uint8)
+    y_pred = (y_pred >= thr).astype(np.uint8)
+
+    intersection = y_pred * y_true
+    sum_ = y_pred + y_true
+    print(y_true, y_pred)
+    print(intersection.shape)
+    print(sum_.shape)
+    print(axis)
+    numerator = np.sum(intersection, axis)
+    denominator = np.sum(sum_ - intersection, axis)
+    return np.mean(numerator / denominator)
+'''
 def iou(y_true,y_pred,thr=0.5):
     y_true = (y_true.flatten() >= thr).astype(np.uint8)
     y_pred = (y_pred.flatten() >= thr).astype(np.uint8)
@@ -16,6 +37,7 @@ def iou(y_true,y_pred,thr=0.5):
     union = ground_truth + prediction - intersection
     return ((intersection + 0.001) / (union.astype(np.float32) + 0.001)).tolist()
     # TODO: why didn't np.mean and np.scalar??
+'''
 
 def get_segmap(segnet, img_batch, batch_size=1):
     try:
@@ -110,7 +132,9 @@ def evaluate(model, img, ans, modulo=32):
     segmap = segment(model, img, modulo)
     n,h,w,c = segmap.shape
     result = segmap.reshape((h,w,c))
-    iou_score = iou(result, ans)
+    print('img:', img.shape, 'modulo:', modulo, 
+          'res:', result.shape, 'ans:', ans.shape)
+    iou_score = iou(ans, result)
     return result, iou_score
 
 def eval_advanced_metric(model, img, ans, origin_map, modulo=32):
