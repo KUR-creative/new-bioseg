@@ -247,6 +247,8 @@ def main(experiment_yml_path):
 
     if config.get('LOSS') is None: #default :TODO:remove it!
         loss = weighted_categorical_crossentropy(weights[:NUM_CLASSES])
+    elif config.get('LOSS') == 'wbce':
+        loss = weighted_categorical_crossentropy(weights[:NUM_CLASSES])
     elif config.get('LOSS') == 'jaccard_distance':
         loss = jaccard_distance(NUM_CLASSES)
 
