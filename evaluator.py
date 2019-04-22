@@ -205,7 +205,9 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
         #print(score,path)
-        results['train_ious'].append( np.asscalar(np.mean(score)) )
+        val = np.asscalar(np.mean(score))
+        val = 0 if np.isnan(val) else val
+        results['train_ious'].append( val )
         cv2.imwrite(path, uint8img)
     print('----')
     for path, img, ans in tqdm(zip(valid_result_paths, valid_imgs, valid_masks),
@@ -214,7 +216,9 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
         #print(score,path)
-        results['valid_ious'].append( np.asscalar(np.mean(score)) )
+        val = np.asscalar(np.mean(score))
+        val = 0 if np.isnan(val) else val
+        results['valid_ious'].append( val )
         cv2.imwrite(path, uint8img)
     print('----')
     for path, img, ans in tqdm(zip(test_result_paths, test_imgs,test_masks),
@@ -223,9 +227,14 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
         #print(score,path)
-        results['test_ious'].append( np.asscalar(np.mean(score)) )
+        val = np.asscalar(np.mean(score))
+        val = 0 if np.isnan(val) else val
+        results['test_ious'].append( val )
         cv2.imwrite(path, uint8img)
 
+    results['mean_train_iou'] = np.asscalar(np.mean( results['train_ious'] ))
+    results['mean_valid_iou'] = np.asscalar(np.mean( results['valid_ious'] ))
+    results['mean_test_iou' ] = np.asscalar(np.mean( results['test_ious' ] ))
     result_yml_name = os.path.join(result_dir,'[result]'+model_name) + '.yml'
     result_dict = dict(results, **dataset_dict)
 

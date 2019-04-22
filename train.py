@@ -11,7 +11,7 @@ from keras.callbacks import ModelCheckpoint, TensorBoard, ReduceLROnPlateau
 
 from utils import human_sorted, splited_paths, file_paths, filename_ext
 from utils import ElapsedTimer, now_time_str
-from utils import load_imgs, bgr_float32, categorize, decategorize, unique_colors
+from utils import load_imgs, bgr_float32, categorize, decategorize, unique_colors, categorize_with
 
 from segmentation_models import Unet
 from segmentation_models.utils import set_trainable
@@ -35,6 +35,7 @@ def crop_augmenter(batch_size=4, crop_size=256, num_channels=3,
         ret_imgs = np.empty((n_img,size,size,n_ch))
         for idx,img in enumerate(images):
             h,w,c = img.shape
+            #print('wtf:',h,w,c)
             y = random_state.randint(0, h - size)
             x = random_state.randint(0, w - size)
             ret_imgs[idx] = img[y:y+size,x:x+size].reshape((size,size,n_ch))
@@ -121,24 +122,40 @@ def main(experiment_yml_path):
     OPTIMIZER = config['OPTIMIZER']
     PATIENCE = config['PATIENCE']
     MIN_LR = config['MIN_LR']
+    if config.get('FILTER_VEC') is None:
+        FILTER_VEC = (3,3,1)
+    else:
+        FILTER_VEC = tuple(config['FILTER_VEC'])
 
     aug,img_aug,mask_aug = None,None,None
-    aug = crop_augmenter(
-        BATCH_SIZE, IMG_SIZE, 1, 
-        crop_before_augs=[
-          iaa.Fliplr(0.5),
-          iaa.Flipud(0.5),
-          iaa.Affine(rotate=(-90,90),mode='reflect'),
-        ],
-        crop_after_augs=[
-          iaa.ElasticTransformation(alpha=(100,200),sigma=14,mode='reflect'),
-        ]
-    )
-    img_aug = iaa.Sequential([
-        iaa.LinearContrast((0.8,1.2)),
-        iaa.Sharpen((0.0,0.3)),
-        iaa.AdditiveGaussianNoise(scale=(0.0,0.05)),
-    ])
+    if EXPR_TYPE == 'manga':
+        aug = crop_augmenter(
+            BATCH_SIZE, IMG_SIZE, #num_channels=2,
+            crop_before_augs=[
+              iaa.Affine(
+                rotate=(-3,3), shear=(-3,3), 
+                scale={'x':(0.8,1.5), 'y':(0.8,1.5)},
+                mode='reflect'),
+            ]
+        )
+
+    elif EXPR_TYPE == 'boundary_bioseg' or EXPR_TYPE == 'bm_bioseg':
+        aug = crop_augmenter(
+            BATCH_SIZE, IMG_SIZE, #num_channels=2,
+            crop_before_augs=[
+              iaa.Fliplr(0.5),
+              iaa.Flipud(0.5),
+              iaa.Affine(rotate=(-90,90),mode='reflect'),
+            ],
+            crop_after_augs=[
+              iaa.ElasticTransformation(alpha=(100,200),sigma=14,mode='reflect'),
+            ]
+        )
+        img_aug = iaa.Sequential([
+            iaa.LinearContrast((0.8,1.2)),
+            iaa.Sharpen((0.0,0.3)),
+            iaa.AdditiveGaussianNoise(scale=(0.0,0.05)),
+        ])
 
     if DATASET_YML is None: 
         # save DATASET_YML
@@ -167,6 +184,7 @@ def main(experiment_yml_path):
         with open(DATASET_YML,'r') as f:
             print('now: ', DATASET_YML)
             dataset = yaml.load(f)
+        origin_map = dataset['origin_map']
         train_img_paths  = dataset['train_imgs']
         train_mask_paths = dataset['train_masks']
         valid_img_paths  = dataset['valid_imgs']
@@ -175,11 +193,11 @@ def main(experiment_yml_path):
         test_mask_paths  = dataset['test_masks']
 
     train_imgs = list(load_imgs(train_img_paths))
-    train_masks= list(map(lambda img: categorize(img)[0],load_imgs(train_mask_paths)))
+    train_masks= list(map(lambda img: categorize_with(img,origin_map),load_imgs(train_mask_paths)))
     valid_imgs = list(load_imgs(valid_img_paths))
-    valid_masks= list(map(lambda img: categorize(img)[0],load_imgs(valid_mask_paths)))
+    valid_masks= list(map(lambda img: categorize_with(img,origin_map),load_imgs(valid_mask_paths)))
     test_imgs  = list(load_imgs(test_img_paths))
-    test_masks = list(map(lambda img: categorize(img)[0],load_imgs(test_mask_paths)))
+    test_masks = list(map(lambda img: categorize_with(img,origin_map),load_imgs(test_mask_paths)))
     #print('-------->', len(valid_imgs))
 
     train_weights = bgr_weights(train_masks)
@@ -199,10 +217,10 @@ def main(experiment_yml_path):
     valid_gen = batch_gen(valid_imgs, valid_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
     test_gen  = batch_gen(test_imgs, test_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
 
-    # DEBUG
     '''
+    # DEBUG
     mask= bgr_float32(cv2.imread(train_mask_paths[0]))
-    categorized_mask,origin_map = categorize(mask)
+    categorized_mask = categorize_with(mask, origin_map)
     for ims,mas in valid_gen:
         for im,ma in zip(ims,mas):
             print(origin_map)
@@ -212,7 +230,7 @@ def main(experiment_yml_path):
             de = decategorize(ma,origin_map)
             print('de',np.unique(de.reshape(-1,de.shape[2]), axis=0))
             cv2.imshow('i',im)
-            #cv2.imshow('m',ma)
+            cv2.imshow('m',ma)
             cv2.imshow('dm',de); cv2.waitKey(0)
     '''
 
@@ -224,7 +242,8 @@ def main(experiment_yml_path):
         model = my_model.unet(
             num_classes=NUM_CLASSES,
             num_maxpool=NUM_MAXPOOL,
-            num_filters=NUM_FILTERS)
+            num_filters=NUM_FILTERS,
+            filter_vec=FILTER_VEC)
 
     if config.get('LOSS') is None: #default :TODO:remove it!
         loss = weighted_categorical_crossentropy(weights[:NUM_CLASSES])
@@ -283,6 +302,10 @@ def main(experiment_yml_path):
 
     eval_timer = ElapsedTimer(experiment_yml_path + ' evaluation')
     if EXPR_TYPE == 'boundary_bioseg':
+        evaluator.eval_and_save(
+            model_path, DATASET_YML, experiment_yml_path
+        )
+    elif EXPR_TYPE == 'manga':
         evaluator.eval_and_save(
             model_path, DATASET_YML, experiment_yml_path
         )
