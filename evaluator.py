@@ -19,10 +19,10 @@ def iou(y_true,y_pred,thr=0.5):
 
     intersection = y_pred * y_true
     sum_ = y_pred + y_true
-    print(y_true, y_pred)
-    print(intersection.shape)
-    print(sum_.shape)
-    print(axis)
+    #print(y_true, y_pred)
+    #print(intersection.shape)
+    #print(sum_.shape)
+    #print(axis)
     numerator = np.sum(intersection, axis)
     denominator = np.sum(sum_ - intersection, axis)
     return np.mean(numerator / denominator)
@@ -132,8 +132,8 @@ def evaluate(model, img, ans, modulo=32):
     segmap = segment(model, img, modulo)
     n,h,w,c = segmap.shape
     result = segmap.reshape((h,w,c))
-    print('img:', img.shape, 'modulo:', modulo, 
-          'res:', result.shape, 'ans:', ans.shape)
+    #print('img:', img.shape, 'modulo:', modulo, 
+    #      'res:', result.shape, 'ans:', ans.shape)
     iou_score = iou(ans, result)
     return result, iou_score
 
