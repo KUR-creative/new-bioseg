@@ -113,9 +113,10 @@ def make_new_path(dst_dir_path,old_path,
     img_name_ext = new_path_rule(name,ext)
     return os.path.join(dst_dir_path,img_name_ext)
 
-def save_imgs(origin_path_seq, img_seq, dst_dir_path, origin_map=None):
+def save_imgs(origin_path_seq, img_seq, dst_dir_path, 
+              origin_map=None, rule=lambda name,ext: name + ext):
     for imgpath, img in zip(origin_path_seq, img_seq):
-        img_dstpath = make_new_path(dst_dir_path,imgpath)
+        img_dstpath = make_new_path(dst_dir_path,imgpath,rule)
         if origin_map is not None:
             img = decategorize(img, origin_map)
         #print(img_dstpath)
@@ -157,7 +158,6 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
                   train_imgs=None, train_masks=None,
                   valid_imgs=None, valid_masks=None,
                   test_imgs=None, test_masks=None):
-    #NOTE: not work with NUM_CLASSES != 3
     with open(experiment_yml_path,'r') as f:
         config = yaml.load(f)
     modulo = 2**(config['NUM_MAXPOOL'])
@@ -211,12 +211,13 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
     test_imgs  = load_imgs(test_img_paths)
     test_masks = load_imgs(test_mask_paths)
     # save images and answers before calculate iou scores
+    ans_rule = lambda name,ext: name + '_ans' + ext # ext[0] is '.' dot
     save_imgs(train_img_paths, train_imgs, train_result_dir)
     save_imgs(valid_img_paths, valid_imgs, valid_result_dir)
     save_imgs(test_img_paths,  test_imgs,  test_result_dir)
-    save_imgs(train_mask_paths, train_masks, train_result_dir)
-    save_imgs(valid_mask_paths, valid_masks, valid_result_dir)
-    save_imgs(test_mask_paths,  test_masks,  test_result_dir)
+    save_imgs(train_mask_paths, train_masks, train_result_dir, rule=ans_rule)
+    save_imgs(valid_mask_paths, valid_masks, valid_result_dir, rule=ans_rule)
+    save_imgs(test_mask_paths,  test_masks,  test_result_dir, rule=ans_rule)
     # categorize answer masks for calculate iou score
     train_imgs = load_imgs(train_img_paths)
     train_masks= load_imgs(train_mask_paths)
