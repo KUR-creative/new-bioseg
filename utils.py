@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import time
 from datetime import datetime
+import funcy as F
 #-------- utils --------
 class ElapsedTimer(object):
     def __init__(self,msg='Elapsed'):
@@ -81,22 +82,43 @@ def load_imgs(img_paths, mode_flag=cv2.IMREAD_COLOR):
     #return map(lambda path: bgr_float32(cv2.imread(path, mode_flag)), img_paths) 
     return map(lambda path: bgr_float32(imread(path, mode_flag)), img_paths) 
 
+def map_colors(img, dst_src_colormap): # {dst1:src1, dst2:src2, ...}
+    h,w,_ = img.shape
+    n_classes = len(dst_src_colormap)
+    ret_img = np.zeros((h,w,n_classes))
+
+    if n_classes == 3:
+        img_b, img_g, img_r = np.rollaxis(img, axis=-1)
+        for i,(dst_color,(src_b,src_g,src_r)) in enumerate(dst_src_colormap.items()):
+            masks = ((img_b == src_b) 
+                   & (img_g == src_g) 
+                   & (img_r == src_r)) # if [0,0,0]
+            ret_img[masks] = dst_color
+    if n_classes == 4:
+        img_b, img_g, img_r, img_3 = np.rollaxis(img, axis=-1)
+        for i,(dst_color,(src_b,src_g,src_r,src_3)) in enumerate(dst_src_colormap.items()):
+            masks = ((img_b == src_b) 
+                   & (img_g == src_g) 
+                   & (img_r == src_r)
+                   & (img_3 == src_3)) # if [0,0,0]
+            F.tap(ret_img[masks].shape, 'n=4 ret_img.shape')
+            ret_img[masks] = dst_color
+    return ret_img
+
 from keras.utils import to_categorical
 def categorize_with(img, origin_map):
     colors = np.unique(img.reshape(-1,img.shape[2]), axis=0)
     #print(colors, origin_map)
     assert set(map(tuple, colors.tolist() )) <= set(map(tuple, origin_map.values() ))
 
-    h,w,_ = img.shape
-    n_classes = len(origin_map)
-    ret_img = np.zeros((h,w,n_classes))
-
+    ret_img = map_colors(img, origin_map)
+    return ret_img
+    '''
     img_b, img_g, img_r = np.rollaxis(img, axis=-1)
     for i,(dst_color,(b,g,r)) in enumerate(origin_map.items()):
         masks = (img_b == b) & (img_g == g) & (img_r == r) # if [0,0,0]
         ret_img[masks] = dst_color
-        #print(dst_color)
-    return ret_img
+    '''
 
 def categorize(img):
     colors = np.unique(img.reshape(-1,img.shape[2]), axis=0)
@@ -116,6 +138,7 @@ def categorize(img):
     return ret_img, origin_map
 
 def decategorize(categorized, origin_map):
+    '''
     #TODO: Need to vectorize!
     h,w,n_classes = categorized.shape
     n_channels = len(next(iter(origin_map.values())))
@@ -123,10 +146,53 @@ def decategorize(categorized, origin_map):
     for c in range(n_classes):
         category = to_categorical(c, n_classes)
         origin = origin_map[tuple(category)]
+        print('origin', origin)
         for y in range(h):
             for x in range(w):
                 if np.alltrue(categorized[y,x] == category):
                     ret_img[y,x] = origin
+    return ret_img
+    '''
+    #TODO: Need to vectorize!
+    h,w,n_classes = categorized.shape
+    n_channels = len(next(iter(origin_map.values())))
+    ret_img = np.zeros((h,w,n_channels))
+
+    if n_classes == 3:
+        img_b, img_g, img_r = np.rollaxis(categorized, axis=-1)
+        for c in range(n_classes):
+            category = to_categorical(c, n_classes)
+            origin = origin_map[tuple(category)]
+
+            key_b, key_g, key_r = category
+            masks = ((img_b == key_b) 
+                   & (img_g == key_g) 
+                   & (img_r == key_r)) # if [0,0,0]
+            ret_img[masks] = origin
+
+    elif n_classes == 2:
+        img_0, img_1 = np.rollaxis(categorized, axis=-1)
+        for c in range(n_classes):
+            category = to_categorical(c, n_classes)
+            origin = origin_map[tuple(category)]
+
+            key_0, key_1 = category
+            masks = ((img_0 == key_0) 
+                   & (img_1 == key_1)) # if [0,0,0]
+            ret_img[masks] = origin
+
+    elif n_classes == 4:
+        img_0, img_1, img_2, img_3 = np.rollaxis(categorized, axis=-1)        
+        for c in range(n_classes):
+            category = to_categorical(c, n_classes)
+            origin = origin_map[tuple(category)]
+
+            key_0, key_1, key_2, key_3 = category
+            masks = ((img_0 == key_0) 
+                   & (img_1 == key_1) 
+                   & (img_2 == key_2) 
+                   & (img_3 == key_3)) # if [0,0,0]
+            ret_img[masks] = origin
     return ret_img
         
 
@@ -221,8 +287,28 @@ class test_categorize_func(unittest.TestCase):
         cv2.imshow('d',decategorized); cv2.waitKey(0)
         self.assertTrue(np.alltrue(img == decategorized))
 
+
+import timeit
 if __name__ == '__main__':
+    im = bgr_float32(cv2.imread('./fixture/7_ans.png'))
+    #cv2.imshow('im', im); cv2.waitKey(0)
+    categorized,omap = categorize(im)
+    #cv2.imshow('categorized', categorized); cv2.waitKey(0)
+    decategorized = decategorize(categorized,omap)
+    assert np.alltrue(im == decategorized)
+    #cv2.imshow('decategorized', decategorized); cv2.waitKey(0)
+
+    im = bgr_float32(cv2.imread('./fixture/19.png'))
+    categorized,omap = categorize(im)
+    decategorized = decategorize(categorized,omap)
+    assert np.alltrue(im == decategorized)
+    #print('u',unique_colors(decategorized))
+
     '''
+    start = timeit.default_timer()
+    #Your statements here
+    stop = timeit.default_timer()
+    print('Time: ', stop - start)  
     print(splited_paths(['11','1','2','3','4','11','1','2','3','4',
                          '11','10','20','30','40','11','10','20','30','40',],
                         ['110','100','200','300','400','110','100','200','300','400',
