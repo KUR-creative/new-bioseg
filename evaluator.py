@@ -3,7 +3,7 @@ from sklearn.metrics import confusion_matrix
 import traceback
 import numpy as np
 import cv2
-from utils import decategorize, categorize_with
+from utils import decategorize, categorize_with, bgr_uint8
 from utils import human_sorted, file_paths, load_imgs, filename_ext
 from metric import advanced_metric, my_old_metric
 
@@ -129,12 +129,49 @@ def make_result_paths(img_paths, result_dir):
             lambda name,ext: name+'_result'+ext),
         img_paths))
 
-def evaluate(model, img, ans, modulo=32):
+def evaluate(model, img, ans, modulo=32, origin_map=None):
     segmap = segment(model, img, modulo)
     n,h,w,c = segmap.shape
     result = segmap.reshape((h,w,c))
+    if origin_map is not None:
+        result = decategorize(result, origin_map)
     #print('img:', img.shape, 'modulo:', modulo, 
     #      'res:', result.shape, 'ans:', ans.shape)
+    print('res:',result.dtype,'ans:',ans.dtype)
+    iou_score = iou(ans, result)
+    return result, iou_score
+
+def not_black2color(img, color=[1,1,1]):
+    h,w,_ = img.shape
+    for y in range(h):
+        for x in range(w):
+            if any(img[y][x]): # if color != [0,0,0]:
+                img[y][x] = color
+
+def evaluate_ultimate(model, img, ans, modulo=32, origin_map=None):
+    ''' evaluate decategorized predicted mask with ultimate answer '''
+    segmap = segment(model, img, modulo)
+    n,h,w,c = segmap.shape
+    result = segmap.reshape((h,w,c))
+    if origin_map is not None:
+        result = decategorize(np.around(result), origin_map)
+
+    #cv2.imwrite('result.png', bgr_uint8(result))
+    # red,blue, black -> white, black
+    for y in range(h):
+        for x in range(w):
+            if any(result[y][x]): # if color != [0,0,0]:
+                result[y][x] = [1,1,1]
+    for y in range(h):
+        for x in range(w):
+            if any(ans[y][x]): # if color != [0,0,0]:
+                ans[y][x] = [1,1,1]
+    #print('res:',result.dtype,'ans:',ans.dtype)
+    #print('u res:', np.unique(result), 'u ans:', np.unique(ans))
+    #print('u 8 res:', np.unique(bgr_uint8(result)), 'u 8 ans:', np.unique(bgr_uint8(ans)))
+    #cv2.imwrite('result_bw.png', bgr_uint8(result))
+    #cv2.imwrite('ans_bw.png', bgr_uint8(ans))
+
     iou_score = iou(ans, result)
     return result, iou_score
 
@@ -267,6 +304,117 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
 
         decategorized = decategorize(np.around(result),origin_map)
         uint8img = bgr_uint8(decategorized)
+        cv2.imwrite(path, uint8img)
+
+    results['mean_train_iou'] = np.asscalar(np.mean( results['train_ious'] ))
+    results['mean_valid_iou'] = np.asscalar(np.mean( results['valid_ious'] ))
+    results['mean_test_iou' ] = np.asscalar(np.mean( results['test_ious' ] ))
+    result_yml_name = os.path.join(result_dir,'[result]'+model_name) + '.yml'
+    result_dict = dict(results, **dataset_dict)
+
+    with open(result_yml_name,'w') as f:
+        f.write(yaml.dump(result_dict))
+
+    print('result images and ' + result_yml_name + ' are saved successfully!')
+
+#TODO: add final evaluation to dataset yml.
+def eval_and_save_ultimate(model_path, dataset_dict_path, experiment_yml_path,
+                        train_imgs=None, train_masks=None,
+                        valid_imgs=None, valid_masks=None,
+                        test_imgs=None, test_masks=None):
+    with open(experiment_yml_path,'r') as f:
+        config = yaml.load(f)
+    modulo = 2**(config['NUM_MAXPOOL'])
+    print('modulo =',modulo)
+    with open(dataset_dict_path,'r') as f:
+        print(dataset_dict_path)
+        dataset_dict = yaml.load(f)
+    
+    train_img_paths = dataset_dict['train_imgs']
+    train_mask_paths= dataset_dict['train_masks']
+    valid_img_paths = dataset_dict['valid_imgs']
+    valid_mask_paths= dataset_dict['valid_masks']
+    test_img_paths  = dataset_dict['test_imgs']
+    test_mask_paths = dataset_dict['test_masks']
+    origin_map = dataset_dict['origin_map']
+
+    model_name = filename_ext(model_path).name
+    result_dir = model_name
+    print(result_dir)
+    train_result_dir = os.path.join(result_dir,'train')
+    valid_result_dir = os.path.join(result_dir,'valid')
+    test_result_dir  = os.path.join(result_dir,'test')
+
+    #---- make result paths ----
+    train_result_paths = make_result_paths(train_img_paths,train_result_dir)
+    valid_result_paths = make_result_paths(valid_img_paths,valid_result_dir)
+    test_result_paths  = make_result_paths(test_img_paths,test_result_dir)
+
+    #---- save results ----
+    os.makedirs(os.path.join(result_dir,'train'))
+    os.makedirs(os.path.join(result_dir,'valid'))
+    os.makedirs(os.path.join(result_dir,'test'))
+
+    train_imgs = load_imgs(train_img_paths)
+    train_masks= load_imgs(train_mask_paths)
+    valid_imgs = load_imgs(valid_img_paths)
+    valid_masks= load_imgs(valid_mask_paths)
+    test_imgs  = load_imgs(test_img_paths)
+    test_masks = load_imgs(test_mask_paths)
+    # save images and answers before calculate iou scores
+    ans_rule = lambda name,ext: name + '_ans' + ext # ext[0] is '.' dot
+    save_imgs(train_img_paths, train_imgs, train_result_dir)
+    save_imgs(valid_img_paths, valid_imgs, valid_result_dir)
+    save_imgs(test_img_paths,  test_imgs,  test_result_dir)
+    save_imgs(train_mask_paths, train_masks, train_result_dir, rule=ans_rule)
+    save_imgs(valid_mask_paths, valid_masks, valid_result_dir, rule=ans_rule)
+    save_imgs(test_mask_paths,  test_masks,  test_result_dir, rule=ans_rule)
+    
+    train_imgs = load_imgs(train_img_paths)
+    train_masks= load_imgs(train_mask_paths)
+    valid_imgs = load_imgs(valid_img_paths)
+    valid_masks= load_imgs(valid_mask_paths)
+    test_imgs  = load_imgs(test_img_paths)
+    test_masks = load_imgs(test_mask_paths)
+    #train_masks= map(lambda img: categorize_with(img,origin_map), train_masks)
+    #valid_masks= map(lambda img: categorize_with(img,origin_map), valid_masks)
+    #test_masks = map(lambda img: categorize_with(img,origin_map), test_masks)
+
+    results = {'train_ious':[], 'valid_ious':[], 'test_ious':[],
+            'mean_train_iou':0, 'mean_valid_iou':0, 'mean_test_iou':0}
+    model = load_model(model_path, compile=False)
+    # NOTE: because of keras bug, 'compile=False' is mendatory.
+    for path, img, ans in tqdm(zip(train_result_paths, train_imgs, train_masks),
+                               total=len(train_img_paths)): 
+        result, score = evaluate_ultimate(model, img, ans, modulo, origin_map)
+        #print(score,path)
+        val = np.asscalar(np.mean(score))
+        val = 0 if np.isnan(val) else val
+        results['train_ious'].append( val )
+
+        uint8img = bgr_uint8(result)
+        cv2.imwrite(path, uint8img)
+    print('----')
+    for path, img, ans in tqdm(zip(valid_result_paths, valid_imgs, valid_masks),
+                               total=len(valid_img_paths)): 
+        result, score = evaluate_ultimate(model, img, ans, modulo, origin_map)
+        #print(score,path)
+        val = np.asscalar(np.mean(score))
+        val = 0 if np.isnan(val) else val
+        results['valid_ious'].append( val )
+
+        uint8img = bgr_uint8(result)
+        cv2.imwrite(path, uint8img)
+    print('----')
+    for path, img, ans in tqdm(zip(test_result_paths, test_imgs,test_masks),
+                               total=len(test_img_paths)): 
+        result, score = evaluate_ultimate(model, img, ans, modulo, origin_map)
+        #print(score,path)
+        val = np.asscalar(np.mean(score))
+        val = 0 if np.isnan(val) else val
+        results['test_ious'].append( val )
+
+        uint8img = bgr_uint8(result)
         cv2.imwrite(path, uint8img)
 
     results['mean_train_iou'] = np.asscalar(np.mean( results['train_ious'] ))

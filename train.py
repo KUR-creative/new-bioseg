@@ -308,7 +308,8 @@ def main(experiment_yml_path):
             model_path, DATASET_YML, experiment_yml_path
         )
     elif EXPR_TYPE == 'manga':
-        evaluator.eval_and_save(
+        evaluator.eval_and_save_ultimate(
+        #evaluator.eval_and_save(
             model_path, DATASET_YML, experiment_yml_path
         )
     else:
