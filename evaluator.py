@@ -148,31 +148,32 @@ def not_black2color(img, color=[1,1,1]):
             if any(img[y][x]): # if color != [0,0,0]:
                 img[y][x] = color
 
-def evaluate_ultimate(model, img, ans, modulo=32, origin_map=None):
+import timeit
+def evaluate_ultimate(model, image, answer, modulo=32, origin_map=None):
     ''' evaluate decategorized predicted mask with ultimate answer '''
-    segmap = segment(model, img, modulo)
+    segmap = segment(model, image, modulo)
     n,h,w,c = segmap.shape
     result = segmap.reshape((h,w,c))
     if origin_map is not None:
         result = decategorize(np.around(result), origin_map)
 
-    #cv2.imwrite('result.png', bgr_uint8(result))
-    # red,blue, black -> white, black
-    for y in range(h):
-        for x in range(w):
-            if any(result[y][x]): # if color != [0,0,0]:
-                result[y][x] = [1,1,1]
-    for y in range(h):
-        for x in range(w):
-            if any(ans[y][x]): # if color != [0,0,0]:
-                ans[y][x] = [1,1,1]
-    #print('res:',result.dtype,'ans:',ans.dtype)
-    #print('u res:', np.unique(result), 'u ans:', np.unique(ans))
-    #print('u 8 res:', np.unique(bgr_uint8(result)), 'u 8 ans:', np.unique(bgr_uint8(ans)))
-    #cv2.imwrite('result_bw.png', bgr_uint8(result))
-    #cv2.imwrite('ans_bw.png', bgr_uint8(ans))
+    # result: red,blue, black -> white, black
+    img_b, img_g, img_r = np.rollaxis(result, axis=-1)
+    for b,g,r in [(1,0,0), (0,1,0), (0,0,1)]:
+        masks = ((img_b == b) 
+                &(img_g == g) 
+                &(img_r == r)) # if [0,0,0]
+        result[masks] = [1.,1.,1.]
 
-    iou_score = iou(ans, result)
+    # answer: red,blue, black -> white, black
+    img_b, img_g, img_r = np.rollaxis(answer, axis=-1)
+    for b,g,r in [(1,0,0), (0,1,0), (0,0,1)]:
+        masks = ((img_b == b) 
+                &(img_g == g) 
+                &(img_r == r)) # if [0,0,0]
+        answer[masks] = [1.,1.,1.]
+
+    iou_score = iou(answer, result)
     return result, iou_score
 
 def eval_advanced_metric(model, img, ans, origin_map, modulo=32):
@@ -630,6 +631,30 @@ def eval_old_and_new(pred_dir, ans_dir):
 
 import sys
 if __name__ == '__main__':
+    with open('/home/kur/dev/szmc/segnet/[rbk200f32d4fv31]2019-04-24_20_37_44/[config][rbk200f32d4fv31]2019-04-24_20_37_44.yml','r') as f:
+        config = yaml.load(f)
+    modulo = 2**(config['NUM_MAXPOOL'])
+    model_path = '/home/kur/dev/szmc/segnet/[rbk200f32d4fv31]2019-04-24_20_37_44/[rbk200f32d4fv31]2019-04-24_20_37_44.h5'
+    model = load_model(model_path, compile=False)
+    # r,g,b -> w k
+    ans = bgr_float32(cv2.imread('./fixture/2_ans.png'))
+    img = bgr_float32(cv2.imread('./fixture/2.png'))
+    omap = {
+        (0., 0., 1.): [1.,0.,0.],
+        (0., 1., 0.): [0.,0.,1.],
+        (1., 0., 0.): [0.,0.,0.],
+    }
+    _,iou_score = evaluate_ultimate(
+        model, img, ans, modulo, omap)
+    print(iou_score,'vs',0.7133488070819389)
+    assert iou_score == 0.7133488070819389
+
+    res = bgr_float32(cv2.imread('./fixture/2_result.png'))
+    _,iou_score = evaluate_ultimate(
+        model, img, res, modulo, omap)
+    print(iou_score,'vs',1.0)
+    assert iou_score == 1.0
+
     if len(sys.argv) == 1 + 2:
         train_tups,valid_tups,test_tups \
             = eval_postprocessed(sys.argv[1], sys.argv[2])

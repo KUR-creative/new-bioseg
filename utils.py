@@ -101,7 +101,6 @@ def map_colors(img, dst_src_colormap): # {dst1:src1, dst2:src2, ...}
                    & (img_g == src_g) 
                    & (img_r == src_r)
                    & (img_3 == src_3)) # if [0,0,0]
-            F.tap(ret_img[masks].shape, 'n=4 ret_img.shape')
             ret_img[masks] = dst_color
     return ret_img
 
