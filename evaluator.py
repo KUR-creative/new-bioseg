@@ -151,11 +151,16 @@ def not_black2color(img, color=[1,1,1]):
 import timeit
 def evaluate_ultimate(model, image, answer, modulo=32, origin_map=None):
     ''' evaluate decategorized predicted mask with ultimate answer '''
+    #NOTE: calculate IoU using *black/white" result image
+    #      (bw img is mapped from decategorized img)
     segmap = segment(model, image, modulo)
     n,h,w,c = segmap.shape
     result = segmap.reshape((h,w,c))
+    #cv2.imshow('free segmap',result); #cv2.waitKey(0)
     if origin_map is not None:
         result = decategorize(np.around(result), origin_map)
+    #cv2.imshow('decategorized',result); cv2.waitKey(0)
+    ret_result = result.copy()
 
     # result: red,blue, black -> white, black
     img_b, img_g, img_r = np.rollaxis(result, axis=-1)
@@ -174,7 +179,7 @@ def evaluate_ultimate(model, image, answer, modulo=32, origin_map=None):
         answer[masks] = [1.,1.,1.]
 
     iou_score = iou(answer, result)
-    return result, iou_score
+    return ret_result, iou_score
 
 def eval_advanced_metric(model, img, ans, origin_map, modulo=32):
     segmap = segment(model, img, modulo)
@@ -631,6 +636,7 @@ def eval_old_and_new(pred_dir, ans_dir):
 
 import sys
 if __name__ == '__main__':
+    '''
     with open('/home/kur/dev/szmc/segnet/[rbk200f32d4fv31]2019-04-24_20_37_44/[config][rbk200f32d4fv31]2019-04-24_20_37_44.yml','r') as f:
         config = yaml.load(f)
     modulo = 2**(config['NUM_MAXPOOL'])
@@ -654,6 +660,37 @@ if __name__ == '__main__':
         model, img, res, modulo, omap)
     print(iou_score,'vs',1.0)
     assert iou_score == 1.0
+    '''
+
+    #--------
+    print('---------------------------------')
+    with open('/home/kur/dev/szmc/segnet/[manga_test_wk50]2019-04-25_04_02_38/[config][manga_test_wk50]2019-04-25_04_02_38.yml','r') as f:
+        config = yaml.load(f)
+    modulo = 2**(config['NUM_MAXPOOL'])
+    model_path = '/home/kur/dev/szmc/segnet/[manga_test_wk50]2019-04-25_04_02_38/[manga_test_wk50]2019-04-25_04_02_38.h5'
+    model = load_model(model_path, compile=False)
+    # r,g,b -> w k
+    omap = {
+        (0., 1.): [1.,1.,1.],
+        (1., 0.): [0.,0.,0.],
+    }
+    img = bgr_float32(cv2.imread('./fixture/0.png'))
+    ans = bgr_float32(cv2.imread('./fixture/0_ans.png'))
+    res = bgr_float32(cv2.imread('./fixture/0_result.png'))
+    result,iou_score = evaluate_ultimate(
+        model, img, ans, modulo, omap)
+    print('iou 2nd:',iou_score)
+    cv2.imshow('result', result); cv2.waitKey(0)
+
+    result,iou_score = evaluate_ultimate(
+        model, img, res, modulo, omap)
+    print(iou_score,'vs',1.0)
+    assert iou_score == 1.0
+    print('iou 2-2nd:',iou_score)
+
+    print('iou rnd 2: 2nd:',iou_score)
+    cv2.imshow('result 2', result); cv2.waitKey(0)
+    exit()
 
     if len(sys.argv) == 1 + 2:
         train_tups,valid_tups,test_tups \
