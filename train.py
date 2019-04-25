@@ -193,12 +193,16 @@ def main(experiment_yml_path):
         test_mask_paths  = dataset['test_masks']
 
     train_imgs = list(load_imgs(train_img_paths))
-    train_masks= list(map(lambda img: categorize_with(img,origin_map),load_imgs(train_mask_paths)))
+    train_masks= list(map(lambda img: categorize_with(img,origin_map),
+                          load_imgs(train_mask_paths)))
     valid_imgs = list(load_imgs(valid_img_paths))
-    valid_masks= list(map(lambda img: categorize_with(img,origin_map),load_imgs(valid_mask_paths)))
+    valid_masks= list(map(lambda img: categorize_with(img,origin_map),
+                          load_imgs(valid_mask_paths)))
     test_imgs  = list(load_imgs(test_img_paths))
-    test_masks = list(map(lambda img: categorize_with(img,origin_map),load_imgs(test_mask_paths)))
+    test_masks = list(map(lambda img: categorize_with(img,origin_map),
+                          load_imgs(test_mask_paths)))
     #print('-------->', len(valid_imgs))
+    #print('is categorize_with are failed?', np.unique(test_masks[0].reshape(-1, test_masks[0].shape[2]), axis=0))
 
     train_weights = bgr_weights(train_masks)
     valid_weights = bgr_weights(valid_masks)
@@ -217,8 +221,8 @@ def main(experiment_yml_path):
     valid_gen = batch_gen(valid_imgs, valid_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
     test_gen  = batch_gen(test_imgs, test_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
 
+    # TODO:DEBUG
     '''
-    # DEBUG
     mask= bgr_float32(cv2.imread(train_mask_paths[0]))
     categorized_mask = categorize_with(mask, origin_map)
     for ims,mas in valid_gen:
@@ -230,7 +234,7 @@ def main(experiment_yml_path):
             de = decategorize(ma,origin_map)
             print('de',np.unique(de.reshape(-1,de.shape[2]), axis=0))
             cv2.imshow('i',im)
-            cv2.imshow('m',ma)
+            #cv2.imshow('m',ma)
             cv2.imshow('dm',de); cv2.waitKey(0)
     '''
 
