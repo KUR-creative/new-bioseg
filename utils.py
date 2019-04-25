@@ -87,14 +87,21 @@ def map_colors(img, dst_src_colormap): # {dst1:src1, dst2:src2, ...}
     n_classes = len(dst_src_colormap)
     ret_img = np.zeros((h,w,n_classes))
 
-    if n_classes == 3:
+    if n_classes == 2:
         img_b, img_g, img_r = np.rollaxis(img, axis=-1)
         for i,(dst_color,(src_b,src_g,src_r)) in enumerate(dst_src_colormap.items()):
             masks = ((img_b == src_b) 
                    & (img_g == src_g) 
                    & (img_r == src_r)) # if [0,0,0]
             ret_img[masks] = dst_color
-    if n_classes == 4:
+    elif n_classes == 3:
+        img_b, img_g, img_r = np.rollaxis(img, axis=-1)
+        for i,(dst_color,(src_b,src_g,src_r)) in enumerate(dst_src_colormap.items()):
+            masks = ((img_b == src_b) 
+                   & (img_g == src_g) 
+                   & (img_r == src_r)) # if [0,0,0]
+            ret_img[masks] = dst_color
+    elif n_classes == 4:
         img_b, img_g, img_r, img_3 = np.rollaxis(img, axis=-1)
         for i,(dst_color,(src_b,src_g,src_r,src_3)) in enumerate(dst_src_colormap.items()):
             masks = ((img_b == src_b) 
@@ -102,6 +109,7 @@ def map_colors(img, dst_src_colormap): # {dst1:src1, dst2:src2, ...}
                    & (img_r == src_r)
                    & (img_3 == src_3)) # if [0,0,0]
             ret_img[masks] = dst_color
+    # ... TODO: refactor it!!!
     return ret_img
 
 from keras.utils import to_categorical
@@ -192,6 +200,9 @@ def decategorize(categorized, origin_map):
                    & (img_2 == key_2) 
                    & (img_3 == key_3)) # if [0,0,0]
             ret_img[masks] = origin
+
+    #print('cat\n', unique_colors(categorized))
+    #print('ret\n', unique_colors(ret_img))
     return ret_img
         
 
@@ -211,11 +222,17 @@ class test_categorize_func(unittest.TestCase):
              [[1.,1.,1.], [1.,1.,1.], [1.,1.,1.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],], 
              [[1.,1.,1.], [1.,1.,1.], [1.,1.,1.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.],],])
 
-        self.wk_img = np.array(
+        self.rk_img = np.array(
             [[[0.,0.,0.], [0.,0.,0.]],  
              [[0.,0.,0.], [0.,0.,0.]],  
              [[0.,0.,1.], [0.,0.,1.]],  
              [[0.,0.,1.], [0.,0.,1.]],])
+
+        self.wk_img = np.array(
+            [[[0.,0.,0.], [0.,0.,0.]],  
+             [[0.,0.,0.], [0.,0.,0.]],  
+             [[1.,1.,1.], [1.,1.,1.]],  
+             [[1.,1.,1.], [1.,1.,1.]],])
 
         self.err_img = np.array(
             [[[0.,0.,0.], [0.,0.,0.]],  
@@ -239,16 +256,30 @@ class test_categorize_func(unittest.TestCase):
             categorized = categorize_with(self.err_img, origin_map)
             print('\n------>\n',categorized)
 
-    def test_wk_img_categorize_with(self):
+    def test_categorize_with_for_training_wk_img(self):
+        origin_map = {
+            (0.0, 1.0): [1., 1., 1.],
+            (1.0, 0.0): [0., 0., 0.]
+        }
+        img = np.copy(self.wk_img)
+        categorized = categorize_with(img, origin_map)
+        expected,_ = categorize(img)
+
+        print('------')
+        print(categorized)
+        print(expected)
+        self.assertTrue(np.alltrue(categorized == expected))
+
+    def test_rk_img_categorize_with(self):
         origin_map = {
             (0.0, 0.0, 1.0): [1., 0., 0.],
             (0.0, 1.0, 0.0): [0., 0., 1.],
             (1.0, 0.0, 0.0): [0., 0., 0.]
         }
-        img = np.copy(self.wk_img)
+        img = np.copy(self.rk_img)
         categorized = categorize_with(img, origin_map)
 
-        #cv2.imshow('origin', self.wk_img)
+        #cv2.imshow('origin', self.rk_img)
         #cv2.imshow('categorized', categorized)
         #cv2.waitKey(0)
 
@@ -277,6 +308,16 @@ class test_categorize_func(unittest.TestCase):
         decategorized = decategorize(categorized, origin_map)
         self.assertTrue(np.alltrue(img == decategorized))
 
+    def test_categorize_real2color(self):
+        origin = cv2.imread('./fixture/0_ans.png')
+        img = origin.copy()
+        categorized,origin_map = categorize(img)
+        decategorized = decategorize(categorized, origin_map)
+        self.assertTrue(np.alltrue(origin == decategorized))
+        cv2.imshow('origin',origin)
+        cv2.imshow('decategorized',decategorized)
+        cv2.waitKey(0)
+
     @unittest.skip('no t.png')
     def test_real_img(self):
         img = bgr_float32(cv2.imread('../t.bmp'))
@@ -289,13 +330,15 @@ class test_categorize_func(unittest.TestCase):
 
 import timeit
 if __name__ == '__main__':
+    #unittest.main()
+
     im = bgr_float32(cv2.imread('./fixture/7_ans.png'))
-    #cv2.imshow('im', im); cv2.waitKey(0)
+    cv2.imshow('im', im); cv2.waitKey(0)
     categorized,omap = categorize(im)
-    #cv2.imshow('categorized', categorized); cv2.waitKey(0)
+    cv2.imshow('categorized', categorized); cv2.waitKey(0)
     decategorized = decategorize(categorized,omap)
     assert np.alltrue(im == decategorized)
-    #cv2.imshow('decategorized', decategorized); cv2.waitKey(0)
+    cv2.imshow('decategorized', decategorized); cv2.waitKey(0)
 
     im = bgr_float32(cv2.imread('./fixture/19.png'))
     categorized,omap = categorize(im)
@@ -315,8 +358,6 @@ if __name__ == '__main__':
                          ]))
     print(*splited_paths(human_sorted(file_paths('../boundary_data190125/image/')),
                         human_sorted(file_paths('../boundary_data190125/label/'))),sep='\n')
-    '''
-    unittest.main()
 
     img = bgr_float32(cv2.imread('../t.bmp'))
     img = img[101:105,:10,:]
@@ -336,3 +377,4 @@ if __name__ == '__main__':
     print(img)
     #print(r,g,b,sep='\n')
     #print(img)
+    '''
