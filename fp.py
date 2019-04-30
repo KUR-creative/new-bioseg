@@ -15,6 +15,7 @@ def foreach(f, seq):
     for elem in seq:
         f(elem)
 
+cfilter = F.autocurry(F.filter)
 
 first = F.first
 partial = F.partial
