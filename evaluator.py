@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix 
 import traceback
@@ -634,8 +636,90 @@ def eval_old_and_new(pred_dir, ans_dir):
     test_tups  = ret(test_pred_paths,  test_ans_paths)
     return train_tups,valid_tups,test_tups
 
+import fp
+def eval4paper(res_dirpath, res_postfix, ans_dirpath, ans_postfix='ans'):
+    def imgpaths(dirpath, postfix):
+        return fp.pipe(
+            file_paths,
+            fp.cfilter(lambda name: postfix in name),
+            human_sorted,
+        )(dirpath)
+    res_paths = imgpaths(res_dirpath,res_postfix)
+    ans_paths = imgpaths(ans_dirpath,ans_postfix)
+
+    resultseq = load_imgs(res_paths)
+    answerseq = load_imgs(ans_paths)
+
+    #for res,ans in zip(res_paths,ans_paths):
+        #print(res,ans)
+
+    #for res,ans in zip(resultseq,answerseq):
+        #pass
+        #cv2.imshow('res', res); cv2.imshow('ans', ans); cv2.waitKey(0)
+
+    ious = fp.lmap( iou, resultseq,answerseq )
+    print(ious)
+    print(np.mean(ious))
+
+import fp
+from pathlib import Path
 import sys
 if __name__ == '__main__':
+    conf_path = './eval4paper/wk3000eph.yml'
+    with open(conf_path) as f:
+        config = yaml.load(f)
+    model_path = './eval4paper/wk3000eph.h5'
+    modulo = 2**(config['NUM_MAXPOOL'])
+
+    with open(config['DATASET_YML'],'r') as f:
+        origin_map = yaml.load(f)['origin_map']
+    model = load_model(model_path, compile=False)
+
+    img_paths = human_sorted(file_paths('./eval4paper/dset/'))
+    imgseq = load_imgs(img_paths)
+
+    resultseq = map(
+        fp.pipe(
+            lambda img: segment(model, img, modulo)[0],
+            np.around,
+            lambda mask: decategorize(mask, origin_map), 
+            bgr_uint8
+        ),
+        imgseq
+    )
+
+    dstdir = './eval4paper/mask'
+    def mk_outpath(srcpath):
+        return str(
+            Path(dstdir) / Path(srcpath).parts[-1]
+        )
+    dstpaths = fp.lmap(mk_outpath, img_paths)
+
+    for img,dstpath in tqdm(zip(resultseq, dstpaths), 
+                            total=len(dstpaths)):
+        cv2.imwrite(dstpath,img)
+        #cv2.imshow(dstpath,img); cv2.waitKey(0)
+
+    exit()
+    ######################
+    conf_path = '/home/kur/dev/szmc/segnet/old/EXPR1/[rbk200f16d4fv31]2019-04-25_05_47_31/[config][rbk200f16d4fv31]2019-04-25_05_47_31.yml'
+    #^~~~~ rbk
+
+    #conf_path = '/home/kur/dev/szmc/segnet/[wk200f16d4fv31]2019-04-28_19_04_51/[config][wk200f16d4fv31]2019-04-28_19_04_51.yml'
+    #^~~~~ best
+    with open(conf_path) as f:
+        config = yaml.load(f)
+    modulo = 2**(config['NUM_MAXPOOL'])
+    model_path = '/home/kur/dev/szmc/segnet/old/EXPR1/[rbk200f16d4fv31]2019-04-25_05_47_31/[rbk200f16d4fv31]2019-04-25_05_47_31.h5'
+    #^~~~~ rbk
+
+    #model_path = '/home/kur/dev/szmc/segnet/[wk200f16d4fv31]2019-04-28_19_04_51/[wk200f16d4fv31]2019-04-28_19_04_51.h5'
+    #^~~~~ best
+    eval_and_save_ultimate(
+        model_path, config['DATASET_YML'], conf_path
+    )
+    #eval4paper('./not_mine/test_data/', 'mask', './not_mine/test')
+    exit()
     '''
     with open('/home/kur/dev/szmc/segnet/[rbk200f32d4fv31]2019-04-24_20_37_44/[config][rbk200f32d4fv31]2019-04-24_20_37_44.yml','r') as f:
         config = yaml.load(f)
