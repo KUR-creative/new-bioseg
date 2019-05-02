@@ -241,10 +241,21 @@ class test_categorize_func(unittest.TestCase):
              [[.2,.3,.9], [1.,.3,.2]],  
              [[.2,.4,.7], [.9,.4,.8]],])  
         self.rounded = np.array(
-            [[[0.,0.,0.], [0.,0.,0.]],  
-             [[0.,0.,0.], [0.,1.,0.]],  
+            [[[1.,0.,0.], [1.,0.,0.]],  
+             [[1.,0.,0.], [0.,1.,0.]],  
              [[0.,0.,1.], [1.,0.,0.]],  
              [[0.,0.,1.], [1.,0.,0.]],])
+
+        self.predicted_wk = np.array(
+            [[[0.,0.], [0.,0.]],  
+             [[0.,0.], [0.,.3]],  
+             [[.2,.9], [1.,.3]],  
+             [[.2,.7], [.9,.4]],])  
+        self.rounded_wk = np.array(
+            [[[1.,0.], [1.,0.]],  
+             [[1.,0.], [0.,1.]],  
+             [[0.,1.], [1.,0.]],  
+             [[0.,1.], [1.,0.]],])
 
         self.wk_img = np.array(
             [[[0.,0.,0.], [0.,0.,0.]],  
@@ -259,18 +270,11 @@ class test_categorize_func(unittest.TestCase):
              [[1.,1.,1.], [1.,1.,1.]],])
 
     def test_predicted(self):
-        expected = np.array(
-            [[[1.,0.,0.],
-              [1.,0.,0.],],
-             [[1.,0.,0.],
-              [0.,1.,0.],],
-             [[0.,0.,1.],
-              [1.,0.,0.],],
-             [[0.,0.,1.],
-              [1.,0.,0.],],]
-        )
         self.assertTrue(np.alltrue(
-            map_max_row(self.predicted) == expected
+            map_max_row(self.predicted) == self.rounded
+        ))
+        self.assertTrue(np.alltrue(
+            map_max_row(self.predicted_wk) == self.rounded_wk
         ))
 
 

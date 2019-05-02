@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 from utils import decategorize, categorize_with, bgr_uint8
 from utils import human_sorted, file_paths, load_imgs, filename_ext
+from utils import map_max_row
 from metric import advanced_metric, my_old_metric
 
 def iou(y_true,y_pred,thr=0.5):
@@ -160,7 +161,8 @@ def evaluate_ultimate(model, image, answer, modulo=32, origin_map=None):
     result = segmap.reshape((h,w,c))
     #cv2.imshow('free segmap',result); #cv2.waitKey(0)
     if origin_map is not None:
-        result = decategorize(np.around(result), origin_map)
+        #result = decategorize(np.around(result), origin_map)
+        result = decategorize(map_max_row(result), origin_map)
     #cv2.imshow('decategorized',result); cv2.waitKey(0)
     ret_result = result.copy()
 
