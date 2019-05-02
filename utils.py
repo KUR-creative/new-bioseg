@@ -144,6 +144,13 @@ def categorize(img):
             = [np.asscalar(b), np.asscalar(g), np.asscalar(r)]
     return ret_img, origin_map
 
+def map_max_row(img, val=1):
+    assert len(img.shape) == 3
+    img2d = img.reshape(-1,img.shape[2])
+    ret = np.zeros_like(img2d)
+    ret[np.arange(len(img2d)), img2d.argmax(1)] = val
+    return ret.reshape(img.shape)
+
 def decategorize(categorized, origin_map):
     '''
     #TODO: Need to vectorize!
@@ -228,6 +235,17 @@ class test_categorize_func(unittest.TestCase):
              [[0.,0.,1.], [0.,0.,1.]],  
              [[0.,0.,1.], [0.,0.,1.]],])
 
+        self.predicted = np.array(
+            [[[0.,0.,0.], [0.,0.,0.]],  
+             [[0.,0.,0.], [0.,.3,0.]],  
+             [[.2,.3,.9], [1.,.3,.2]],  
+             [[.2,.4,.7], [.9,.4,.8]],])  
+        self.rounded = np.array(
+            [[[0.,0.,0.], [0.,0.,0.]],  
+             [[0.,0.,0.], [0.,1.,0.]],  
+             [[0.,0.,1.], [1.,0.,0.]],  
+             [[0.,0.,1.], [1.,0.,0.]],])
+
         self.wk_img = np.array(
             [[[0.,0.,0.], [0.,0.,0.]],  
              [[0.,0.,0.], [0.,0.,0.]],  
@@ -239,6 +257,22 @@ class test_categorize_func(unittest.TestCase):
              [[0.,0.,0.], [0.,0.,0.]],  
              [[1.,1.,1.], [1.,1.,1.]],  
              [[1.,1.,1.], [1.,1.,1.]],])
+
+    def test_predicted(self):
+        expected = np.array(
+            [[[1.,0.,0.],
+              [1.,0.,0.],],
+             [[1.,0.,0.],
+              [0.,1.,0.],],
+             [[0.,0.,1.],
+              [1.,0.,0.],],
+             [[0.,0.,1.],
+              [1.,0.,0.],],]
+        )
+        self.assertTrue(np.alltrue(
+            map_max_row(self.predicted) == expected
+        ))
+
 
     def test_categorize3color(self):
         img = np.copy(self.img)
@@ -308,6 +342,7 @@ class test_categorize_func(unittest.TestCase):
         decategorized = decategorize(categorized, origin_map)
         self.assertTrue(np.alltrue(img == decategorized))
 
+    @unittest.skip('later')
     def test_categorize_real2color(self):
         origin = cv2.imread('./fixture/0_ans.png')
         img = origin.copy()
@@ -330,7 +365,7 @@ class test_categorize_func(unittest.TestCase):
 
 import timeit
 if __name__ == '__main__':
-    #unittest.main()
+    unittest.main()
 
     im = bgr_float32(cv2.imread('./fixture/7_ans.png'))
     cv2.imshow('im', im); cv2.waitKey(0)

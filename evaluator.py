@@ -665,6 +665,20 @@ import fp
 from pathlib import Path
 import sys
 if __name__ == '__main__':
+    conf_path = './[wk200f16d4fv31_3000eph]2019-04-30_10_17_29/[config][wk200f16d4fv31_3000eph]2019-04-30_10_17_29.yml'
+    model_path = './[wk200f16d4fv31_3000eph]2019-04-30_10_17_29/[wk200f16d4fv31_3000eph]2019-04-30_10_17_29.h5'
+    with open(conf_path) as f:
+        config = yaml.load(f)
+
+    eval_and_save_ultimate(
+        model_path,
+        config['DATASET_YML'],
+        conf_path
+    )
+        
+
+    exit()#-----------------------------------
+
     conf_path = './eval4paper/wk3000eph.yml'
     with open(conf_path) as f:
         config = yaml.load(f)
