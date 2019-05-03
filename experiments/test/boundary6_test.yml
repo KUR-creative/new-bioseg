@@ -1,0 +1,24 @@
+# DO NOT remove unused fields. Just leave them blank. 
+# It will be interpreted as None.
+
+EXPR_TYPE: boundary_bioseg
+
+IMG_SIZE: 384 #304 #352 #256 #288 # 384
+
+BATCH_SIZE: 4 
+NUM_EPOCHS: 2
+STEPS_PER_EPOCH: 100
+
+DATASET_YML: ./boundary190502/thickness6data.yml
+NUM_CLASSES: 3
+
+MODEL: naive_unet
+LOSS: wbce
+OPTIMIZER: Adam #delta
+
+PATIENCE: 30000000
+MIN_LR: 1.0e-10
+
+TRANSFER_LEARNING: False
+NUM_FILTERS: 32
+NUM_MAXPOOL: 4 # 42 layers
