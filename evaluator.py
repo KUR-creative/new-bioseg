@@ -9,6 +9,7 @@ from utils import decategorize, categorize_with, bgr_uint8
 from utils import human_sorted, file_paths, load_imgs, filename_ext
 from utils import map_max_row
 from metric import advanced_metric, my_old_metric
+from pathlib import Path
 
 def iou(y_true,y_pred,thr=0.5):
     ''' 
@@ -140,7 +141,7 @@ def evaluate(model, img, ans, modulo=32, origin_map=None):
         result = decategorize(result, origin_map)
     #print('img:', img.shape, 'modulo:', modulo, 
     #      'res:', result.shape, 'ans:', ans.shape)
-    print('res:',result.dtype,'ans:',ans.dtype)
+    #print('res:',result.dtype,'ans:',ans.dtype)
     iou_score = iou(ans, result)
     return result, iou_score
 
@@ -288,7 +289,8 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         val = 0 if np.isnan(val) else val
         results['train_ious'].append( val )
 
-        decategorized = decategorize(np.around(result),origin_map)
+        np.save(Path(path).with_suffix('.npy'), result) # categorized, float32
+        decategorized = decategorize(map_max_row(result),origin_map)
         uint8img = bgr_uint8(decategorized)
         cv2.imwrite(path, uint8img)
     print('----')
@@ -300,7 +302,8 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         val = 0 if np.isnan(val) else val
         results['valid_ious'].append( val )
 
-        decategorized = decategorize(np.around(result),origin_map)
+        np.save(Path(path).with_suffix('.npy'), result) # categorized, float32
+        decategorized = decategorize(map_max_row(result),origin_map)
         uint8img = bgr_uint8(decategorized)
         cv2.imwrite(path, uint8img)
     print('----')
@@ -312,7 +315,8 @@ def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,
         val = 0 if np.isnan(val) else val
         results['test_ious'].append( val )
 
-        decategorized = decategorize(np.around(result),origin_map)
+        np.save(Path(path).with_suffix('.npy'), result) # categorized, float32
+        decategorized = decategorize(map_max_row(result),origin_map)
         uint8img = bgr_uint8(decategorized)
         cv2.imwrite(path, uint8img)
 

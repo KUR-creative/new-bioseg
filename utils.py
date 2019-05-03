@@ -22,7 +22,7 @@ class ElapsedTimer(object):
         return (self.msg + ": %s " % self.elapsed(time.time() - self.start_time))
 
 def now_time_str():
-    return datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
+    return datetime.now().strftime('%y%m%d_%H%M%S')
 
 def human_sorted(iterable):
     ''' Sorts the given iterable in the way that is expected. '''

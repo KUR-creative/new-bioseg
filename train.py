@@ -234,7 +234,7 @@ def main(experiment_yml_path):
             de = decategorize(ma,origin_map)
             print('de',np.unique(de.reshape(-1,de.shape[2]), axis=0))
             cv2.imshow('i',im)
-            #cv2.imshow('m',ma)
+            cv2.imshow('m',ma)
             cv2.imshow('dm',de); cv2.waitKey(0)
     '''
 
@@ -265,11 +265,11 @@ def main(experiment_yml_path):
     )
 
 
-    model_name = '['+experiment_name +']'+start_time 
+    model_name = experiment_name +'_'+start_time 
     result_dir = model_name
     os.makedirs(result_dir)
     shutil.copyfile(experiment_yml_path, 
-                    pjoin(result_dir, '[config]'+model_name+'.yml'))
+                    pjoin(result_dir, 'config_'+model_name+'.yml'))
 
     from keras.utils import plot_model
     plot_model(model, to_file=pjoin(result_dir,model_name+'.png'), 
@@ -308,9 +308,11 @@ def main(experiment_yml_path):
 
     eval_timer = ElapsedTimer(experiment_yml_path + ' evaluation')
     if EXPR_TYPE == 'boundary_bioseg':
-        evaluator.eval_and_save(
-            model_path, DATASET_YML, experiment_yml_path
-        )
+        #evaluator.eval_and_save_ultimate( model_path, DATASET_YML, experiment_yml_path)
+        evaluator.eval_and_save( 
+            model_path, DATASET_YML, experiment_yml_path)
+            #model_path, DATASET_YML, experiment_yml_path,
+            #train_imgs,train_masks, valid_imgs,valid_masks, test_imgs,test_masks)
     elif EXPR_TYPE == 'manga':
         evaluator.eval_and_save_ultimate(
         #evaluator.eval_and_save(
