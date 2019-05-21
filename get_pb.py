@@ -7,29 +7,40 @@ from tensorflow.python.framework import graph_util
 from tensorflow.python.framework import graph_io
 from tensorflow.python.tools.freeze_graph import freeze_graph_with_def_protos
 
-def serialize(model, output_path):
+
+def freeze_session(session, keep_var_names=None, output_names=None, clear_devices=True):
     """
-    https://gist.github.com/bobpoekert/55136024048075989d283192badac0a0
-    model: a keras Model
-    output_path: filepath to save the tensorflow pb model to
+    https://stackoverflow.com/questions/45466020/how-to-export-keras-h5-to-tensorflow-pb
+    Freezes the state of a session into a pruned computation graph.
+
+    Creates a new computation graph where variable nodes are replaced by
+    constants taking their current value in the session. The new graph will be
+    pruned so subgraphs that are not necessary to compute the requested
+    outputs are removed.
+    @param session The TensorFlow session to be frozen.
+    @param keep_var_names A list of variable names that should not be frozen,
+                          or None to freeze all the variables in the graph.
+    @param output_names Names of the relevant graph outputs.
+    @param clear_devices Remove the device directives from the graph for better portability.
+    @return The frozen graph definition.
     """
-    session = tf.Session()
-    K.set_session(session)
-    K.set_learning_phase(0)
-
-    # prevent error: Attempting to use uninitialized value batch_normalization_3/gamma
-    # https://stackoverflow.com/questions/41818654/keras-batchnormalization-uninitialized-value
-    session.run(tf.global_variables_initializer())
-
-    config = model.get_config()
-    weights = model.get_weights()
-
-    input_graph = session.graph_def
-    output_graph = graph_util.convert_variables_to_constants(
-            session, input_graph, [v.name.split(':')[0] for v in model.outputs])
-
-    with open(output_path, 'wb') as outf:
-        outf.write(output_graph.SerializeToString())
+    graph = session.graph
+    with graph.as_default():
+        freeze_var_names = list(set(v.op.name for v in tf.global_variables()).difference(keep_var_names or []))
+        output_names = output_names or []
+        output_names += [v.op.name for v in tf.global_variables()]
+        input_graph_def = graph.as_graph_def()
+        if clear_devices:
+            for node in input_graph_def.node:
+                node.device = ""
+        frozen_graph = tf.graph_util.convert_variables_to_constants(
+            session, input_graph_def, output_names, freeze_var_names)
+        return frozen_graph
 
 snet = load_model('./fixture/snet.h5', compile=False)
-serialize(snet, './fixture/test.pb')
+frozen_graph = freeze_session(
+    K.get_session(),
+    output_names=[out.op.name for out in snet.outputs]
+)
+
+tf.io.write_graph(frozen_graph, './fixture', 'snet.pb', as_text=False)
