@@ -67,6 +67,23 @@ def segment_or_oom(segnet, inp, modulo=16):
     org_h,org_w = inp.shape[:2]
 
     img = modulo_padded(inp, modulo) 
+    try:
+        img_bat = np.expand_dims(img,0) 
+        segmap = get_segmap(segnet, img_bat)#segnet.predict(img_bat, batch_size=1)#, verbose=1)
+        segmap = np.squeeze(segmap[:,:h,:w,:], 0) #segmap[:,:h,:w,:].reshape((h,w,2))
+        return segmap
+    except Exception as e: # ResourceExhaustedError:
+        print(traceback.print_tb(e.__traceback__)); exit()
+        print(img_shape,'OOM error: image is too big. (in segnet)')
+        return None
+
+"""
+# old implementation
+def segment_or_oom(segnet, inp, modulo=16):
+    ''' If image is too big, return None '''
+    org_h,org_w = inp.shape[:2]
+
+    img = modulo_padded(inp, modulo) 
     img_shape = img.shape #NOTE grayscale?
     img_bat = img.reshape((1,) + img_shape) # size 1 batch
     #print('---->',img_bat.shape)
@@ -78,6 +95,7 @@ def segment_or_oom(segnet, inp, modulo=16):
         print(traceback.print_tb(e.__traceback__)); exit()
         print(img_shape,'OOM error: image is too big. (in segnet)')
         return None
+"""
 
 size_limit = 4000000 # dev-machine
 def segment(segnet, inp, modulo=16):

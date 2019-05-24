@@ -67,6 +67,7 @@ with tf.Session() as sess:
 
     cv2.imshow('i', img)
     cv2.imshow('m', mask)
+    cv2.waitKey(0)
 
 '''
 import keras
