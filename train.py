@@ -127,6 +127,8 @@ def main(experiment_yml_path):
     else:
         FILTER_VEC = tuple(config['FILTER_VEC'])
 
+    assert EXPR_TYPE in ('manga', 'boundary_bioseg', 'bm_bioseg'), EXPR_TYPE
+
     aug,img_aug,mask_aug = None,None,None
     if EXPR_TYPE == 'manga':
         aug = crop_augmenter(
