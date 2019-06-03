@@ -116,7 +116,10 @@ from keras.utils import to_categorical
 def categorize_with(img, origin_map):
     colors = np.unique(img.reshape(-1,img.shape[2]), axis=0)
     #print(colors, origin_map)
-    assert set(map(tuple, colors.tolist() )) <= set(map(tuple, origin_map.values() ))
+    assert set(map(tuple, colors.tolist() )) <= set(map(tuple, origin_map.values() )),\
+        " %s > %s " % ( str(set(map(tuple, colors.tolist()))),
+                        str(set(map(tuple, origin_map.values()))) )
+
 
     ret_img = map_colors(img, origin_map)
     return ret_img
