@@ -64,11 +64,15 @@ def modulo_padded(img, modulo=16):
 
 def segment_or_oom(segnet, inp, modulo=16):
     ''' If image is too big, return None '''
-    org_h,org_w = inp.shape[:2]
+    h,w = inp.shape[:2]
 
     img = modulo_padded(inp, modulo) 
+    img_bat = np.expand_dims(img,0) 
+    segmap = get_segmap(segnet, img_bat)#segnet.predict(img_bat, batch_size=1)#, verbose=1)
+    segmap = np.squeeze(segmap[:,:h,:w,:], 0) #segmap[:,:h,:w,:].reshape((h,w,2))
+    return segmap
+    '''
     try:
-        img_bat = np.expand_dims(img,0) 
         segmap = get_segmap(segnet, img_bat)#segnet.predict(img_bat, batch_size=1)#, verbose=1)
         segmap = np.squeeze(segmap[:,:h,:w,:], 0) #segmap[:,:h,:w,:].reshape((h,w,2))
         return segmap
@@ -76,6 +80,7 @@ def segment_or_oom(segnet, inp, modulo=16):
         print(traceback.print_tb(e.__traceback__)); exit()
         print(img_shape,'OOM error: image is too big. (in segnet)')
         return None
+    '''
 
 """
 # old implementation
@@ -206,7 +211,8 @@ def evaluate_ultimate(model, image, answer, modulo=32, origin_map=None):
 
 def eval_advanced_metric(model, img, ans, origin_map, modulo=32):
     segmap = segment(model, img, modulo)
-    n,h,w,c = segmap.shape
+    #print(segmap.shape)
+    h,w,c = segmap.shape
     result = segmap.reshape((h,w,c))
 
     decategorized = decategorize(np.around(result),origin_map)
@@ -460,6 +466,7 @@ def eval_and_save_ultimate(model_path, dataset_dict_path, experiment_yml_path,
 
     print('result images and ' + result_yml_name + ' are saved successfully!')
 
+from utils import unique_colors
 def eval_and_save_advanced_metric(
         model_path, dataset_dict_path, experiment_yml_path,
         train_imgs=None, train_masks=None,
@@ -524,25 +531,25 @@ def eval_and_save_advanced_metric(
                                total=len(train_imgs)): 
         #cv2.imshow('ans?', ans);cv2.waitKey(0)
         result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
-        uint8img = result.astype(np.uint8)
         results['train_f1'].append(f1)
         results['train_dice_obj'].append(dice_obj)
+        uint8img = bgr_uint8(result)
         cv2.imwrite(path, uint8img)
     print('----')
     for path, img, ans in tqdm(zip(valid_result_paths, valid_imgs, valid_masks),
                                total=len(valid_imgs)): 
         result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
-        uint8img = result.astype(np.uint8)
         results['valid_f1'].append(f1) 
         results['valid_dice_obj'].append(dice_obj)
+        uint8img = bgr_uint8(result)
         cv2.imwrite(path, uint8img)
     print('----')
     for path, img, ans in tqdm(zip(test_result_paths, test_imgs,test_masks),
                                total=len(test_imgs)): 
         result, f1, dice_obj = eval_advanced_metric(model, img, ans, origin_map, modulo)
-        uint8img = result.astype(np.uint8)
         results['test_f1'].append(f1)
         results['test_dice_obj'].append(dice_obj)
+        uint8img = bgr_uint8(result)
         cv2.imwrite(path, uint8img)
 
     result_yml_name = os.path.join(result_dir,'[result]'+model_name) + '.yml'
