@@ -109,7 +109,7 @@ def main(experiment_yml_path):
     train_timer = ElapsedTimer(experiment_yml_path + ' training')
     #-------------------------------------------------------------------------------------------------
     EXPR_TYPE = config['EXPR_TYPE']
-    NUM_CLASSES = config['NUM_CLASSES']
+    #NUM_CLASSES = config['NUM_CLASSES'] # Don't care this! automatically set!
     IMG_SIZE = config['IMG_SIZE']
     BATCH_SIZE = config['BATCH_SIZE']
     NUM_EPOCHS = config['NUM_EPOCHS']
@@ -194,6 +194,10 @@ def main(experiment_yml_path):
         test_img_paths   = dataset['test_imgs']
         test_mask_paths  = dataset['test_masks']
 
+    NUM_CLASSES = len(origin_map) 
+    print(origin_map)
+    print(len(origin_map))
+    print('NUM_CLASSES', NUM_CLASSES)
     #label_paths = human_sorted(train_mask_paths + valid_mask_paths + test_mask_paths)
     #print('diff',set(label_paths) ^ set(human_sorted( file_paths('./borderNucleus190704/label_dirs/bn190704/'))))
     #print('not in dset',set(label_paths) - set(human_sorted( file_paths('./borderNucleus190704/label_dirs/bn190704/'))))
