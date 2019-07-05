@@ -133,7 +133,7 @@ def map_colors(img, dst_src_colormap):
             ret_img[masks] = dst_color
     elif n_classes == 4:
         for c,(dst_color, src_bgr) in enumerate(dst_src_colormap.items()):
-            ret_img[:,:,c] = map_pixels(img, src_bgr, dst_color)[:,:,c]
+            ret_img += map_pixels(img, src_bgr, dst_color)
 
     # ... TODO: refactor it!!!
     return ret_img
