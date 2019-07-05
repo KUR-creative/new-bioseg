@@ -194,15 +194,28 @@ def main(experiment_yml_path):
         test_img_paths   = dataset['test_imgs']
         test_mask_paths  = dataset['test_masks']
 
+    #label_paths = human_sorted(train_mask_paths + valid_mask_paths + test_mask_paths)
+    #print('diff',set(label_paths) ^ set(human_sorted( file_paths('./borderNucleus190704/label_dirs/bn190704/'))))
+    #print('not in dset',set(label_paths) - set(human_sorted( file_paths('./borderNucleus190704/label_dirs/bn190704/'))))
+
     train_imgs = list(load_imgs(train_img_paths))
+    print('train image loaded')
     train_masks= list(map(lambda img: categorize_with(img,origin_map),
                           load_imgs(train_mask_paths)))
+    print('train mask loaded')
+
     valid_imgs = list(load_imgs(valid_img_paths))
+    print('valid image loaded')
     valid_masks= list(map(lambda img: categorize_with(img,origin_map),
                           load_imgs(valid_mask_paths)))
+    print('valid mask loaded')
+
     test_imgs  = list(load_imgs(test_img_paths))
+    print('test image loaded')
     test_masks = list(map(lambda img: categorize_with(img,origin_map),
                           load_imgs(test_mask_paths)))
+    print('test mask loaded')
+
     #print('-------->', len(valid_imgs))
     #print('is categorize_with are failed?', np.unique(test_masks[0].reshape(-1, test_masks[0].shape[2]), axis=0))
 

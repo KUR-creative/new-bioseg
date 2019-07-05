@@ -81,6 +81,7 @@ def load_imgs(img_paths, mode_flag=cv2.IMREAD_COLOR):
     #print(img_paths)
     #return map(lambda path: bgr_float32(cv2.imread(path, mode_flag)), img_paths) 
     return map(lambda path: bgr_float32(imread(path, mode_flag)), img_paths) 
+    #return map(lambda path: bgr_float32(imread(F.tap(path), mode_flag)), img_paths) 
 
 def map_pixels(img, cond_color, true_color, false_color=None):
     h,w,c = img.shape
