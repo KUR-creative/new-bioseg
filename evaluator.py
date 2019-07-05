@@ -158,7 +158,10 @@ def make_result_paths(img_paths, result_dir):
 
 def evaluate(model, img, ans, modulo=32, origin_map=None):
     segmap = segment(model, img, modulo)
-    n,h,w,c = segmap.shape
+    if len(segmap.shape) == 4:
+        _,h,w,c = segmap.shape 
+    elif len(segmap.shape) == 3:
+        h,w,c = segmap.shape 
     result = segmap.reshape((h,w,c))
     if origin_map is not None:
         result = decategorize(result, origin_map)
@@ -181,7 +184,11 @@ def evaluate_ultimate(model, image, answer, modulo=32, origin_map=None):
     #NOTE: calculate IoU using *black/white" result image
     #      (bw img is mapped from decategorized img)
     segmap = segment(model, image, modulo)
-    n,h,w,c = segmap.shape
+    if len(segmap.shape) == 4:
+        _,h,w,c = segmap.shape 
+    elif len(segmap.shape) == 3:
+        h,w,c = segmap.shape 
+
     result = segmap.reshape((h,w,c))
     #cv2.imshow('free segmap',result); #cv2.waitKey(0)
     if origin_map is not None:
