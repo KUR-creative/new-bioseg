@@ -228,6 +228,7 @@ def main(experiment_yml_path):
     #print('-------->', len(valid_imgs))
     #print('is categorize_with are failed?', np.unique(test_masks[0].reshape(-1, test_masks[0].shape[2]), axis=0))
 
+    '''
     train_weights = bgr_weights(train_masks)
     valid_weights = bgr_weights(valid_masks)
     test_weights = bgr_weights(test_masks)
@@ -239,6 +240,7 @@ def main(experiment_yml_path):
     weights = weights[:NUM_CLASSES]
     weights /= np.sum(weights)
     print('normalized weights:', weights)
+    '''
     print('NUM_CLASSES', NUM_CLASSES)
 
     train_gen = batch_gen(train_imgs, train_masks, BATCH_SIZE, aug, img_aug, num_classes=NUM_CLASSES)
@@ -284,6 +286,7 @@ def main(experiment_yml_path):
         optimizer=OPTIMIZER,
         #optimizer='Adam', 
         loss=loss,
+        #metrics=['accuracy']
         metrics=[jaccard_coefficient]
         #metrics=[mean_iou]
     )
