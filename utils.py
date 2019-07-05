@@ -179,6 +179,7 @@ def map_max_row(img, val=1):
     img2d = img.reshape(-1,img.shape[2])
     ret = np.zeros_like(img2d)
     ret[np.arange(len(img2d)), img2d.argmax(1)] = val
+    #print(unique_colors(ret.reshape(img.shape)), img.dtype)
     return ret.reshape(img.shape)
 
 def decategorize(categorized, origin_map):
@@ -399,6 +400,26 @@ class test_categorize_func(unittest.TestCase):
 
 import timeit
 if __name__ == '__main__':
+    im = bgr_float32(cv2.imread(
+        './borderNucleus190704/label_dirs/bn190704/testA_10_anno.bmp'
+    ))
+
+    omap = {
+        (0.0, 0.0, 0.0, 1.0): [1.0, 1.0, 1.0], #white
+        (0.0, 0.0, 1.0, 0.0): [0.0, 1.0, 0.0], # green
+        (0.0, 1.0, 0.0, 0.0): [0.0, 0.0, 0.0], # black
+        (1.0, 0.0, 0.0, 0.0): [0.0, 0.0, 1.0], # red
+    }
+    one_hot = categorize_with(im, omap) 
+    ret = decategorize(one_hot, omap)
+    print('origin',unique_colors(im))
+    print('one-hot',unique_colors(one_hot))
+    print('decategorized',unique_colors(ret))
+
+    cv2.imshow('img', im); 
+    cv2.imshow('ret', ret); cv2.waitKey(0)
+    exit()
+
     unittest.main()
 
     im = bgr_float32(cv2.imread('./fixture/7_ans.png'))

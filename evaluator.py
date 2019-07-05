@@ -396,9 +396,9 @@ def eval_and_save_ultimate(model_path, dataset_dict_path, experiment_yml_path,
     test_result_paths  = make_result_paths(test_img_paths,test_result_dir)
 
     #---- save results ----
-    os.makedirs(os.path.join(result_dir,'train'))
-    os.makedirs(os.path.join(result_dir,'valid'))
-    os.makedirs(os.path.join(result_dir,'test'))
+    os.makedirs(os.path.join(result_dir,'train'))#, exist_ok=True)
+    os.makedirs(os.path.join(result_dir,'valid'))#, exist_ok=True)
+    os.makedirs(os.path.join(result_dir,'test'))#, exist_ok=True)
 
     train_imgs = load_imgs(train_img_paths)
     train_masks= load_imgs(train_mask_paths)
@@ -703,6 +703,13 @@ import fp
 from pathlib import Path
 import sys
 if __name__ == '__main__':
+    eval_and_save_ultimate(
+        './test_nucleus_190705_152946/test_nucleus_190705_152946.h5', 
+        './borderNucleus190704/borderNucleus190704.yml', 
+        './experiments/borderNucleus190704/test/test_nucleus.yml'
+    )
+    exit()
+
     conf_path = './[wk200f16d4fv31_3000eph]2019-04-30_10_17_29/[config][wk200f16d4fv31_3000eph]2019-04-30_10_17_29.yml'
     model_path = './[wk200f16d4fv31_3000eph]2019-04-30_10_17_29/[wk200f16d4fv31_3000eph]2019-04-30_10_17_29.h5'
     with open(conf_path) as f:
