@@ -1,16 +1,22 @@
 from keras.models import *
 from keras.layers import *
 
-def set_layer_BN_relu(input,layer_fn,*args,**kargs):
+def layer_BN_relu(input,layer_fn,*args,**kargs):
     x = layer_fn(*args,**kargs)(input)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
     return x
 
+def layer_relu(input,layer_fn,*args,**kargs):
+    x = layer_fn(*args,**kargs)(input)
+    x = Activation('relu')(x)
+    return x
+
 def down_block(x, cnum, kernel_init, filter_vec=(3,3,1), maxpool2x=True, 
-               kernel_regularizer=None, bias_regularizer=None):
+               kernel_regularizer=None, bias_regularizer=None,
+               basic_layer=layer_BN_relu):
     for n in filter_vec:
-        x = set_layer_BN_relu(
+        x = basic_layer(
                 x, Conv2D, cnum, (n,n), 
                 padding='same', kernel_initializer=kernel_init,
                 kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
@@ -21,14 +27,15 @@ def down_block(x, cnum, kernel_init, filter_vec=(3,3,1), maxpool2x=True,
         return x
 
 def up_block(from_horizon, upward, cnum, kernel_init, filter_vec=(3,3,1), 
-             kernel_regularizer=None, bias_regularizer=None):
+             kernel_regularizer=None, bias_regularizer=None,
+             basic_layer=layer_BN_relu):
     upward = Conv2DTranspose(cnum, (2,2), padding='same', strides=(2,2), 
                  kernel_initializer=kernel_init,
                  kernel_regularizer=kernel_regularizer,
                  bias_regularizer=bias_regularizer)(upward)
     merged = concatenate([from_horizon,upward], axis=3)
     for n in filter_vec:
-        merged = set_layer_BN_relu(
+        merged = basic_layer(
             merged, Conv2D, cnum, (n,n), padding='same', 
             kernel_initializer=kernel_init,
             kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
@@ -39,7 +46,7 @@ def unet(input_size = (None,None,3), pretrained_weights = None,
          num_classes=3, last_activation='softmax',
          num_filters=64, num_maxpool = 4, filter_vec=(3,3,1),
          kernel_regularizer=None, bias_regularizer=None,
-         dropout=None):
+         dropout=None, basic_layer=layer_BN_relu):
     '''
     depth = 4
     inp -> 0-------8 -> out
@@ -57,18 +64,21 @@ def unet(input_size = (None,None,3), pretrained_weights = None,
     for i in range(depth): 
         down_convs[i], x = down_block(x, 2**i * cnum, kernel_init, filter_vec=filter_vec, 
                                       kernel_regularizer=kernel_regularizer,
-                                      bias_regularizer=bias_regularizer)
+                                      bias_regularizer=bias_regularizer,
+                                      basic_layer=basic_layer)
 
     x = down_block(x, 2**depth * cnum, kernel_init, filter_vec=filter_vec, maxpool2x=False,
 		   kernel_regularizer=kernel_regularizer,
-		   bias_regularizer=bias_regularizer)
+		   bias_regularizer=bias_regularizer,
+                   basic_layer=basic_layer)
 
     x = Dropout(dropout)(x) if dropout else x
 
     for i in reversed(range(depth)): 
         x = up_block(down_convs[i], x, 2**i * cnum, kernel_init, filter_vec=filter_vec,
 		     kernel_regularizer=kernel_regularizer,
-		     bias_regularizer=bias_regularizer)
+		     bias_regularizer=bias_regularizer,
+                     basic_layer=basic_layer)
 
     #print('nc:',num_classes, 'la:',last_activation)
     if last_activation == 'sigmoid':
