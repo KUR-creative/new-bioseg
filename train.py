@@ -274,6 +274,16 @@ def main(experiment_yml_path):
             num_maxpool=NUM_MAXPOOL,
             num_filters=NUM_FILTERS,
             filter_vec=FILTER_VEC)
+    elif MODEL == 'no_bn_unet':
+        model = my_model.unet(
+            num_classes=NUM_CLASSES,
+            num_maxpool=NUM_MAXPOOL,
+            num_filters=NUM_FILTERS,
+            filter_vec=FILTER_VEC,
+            basic_layer=my_model.layer_relu)
+    else:
+        print('not supported model!')
+        exit()
 
     if config.get('LOSS') is None: #default :TODO:remove it!
         loss = weighted_categorical_crossentropy(weights[:NUM_CLASSES])
