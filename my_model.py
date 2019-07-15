@@ -15,11 +15,19 @@ def layer_relu(input,layer_fn,*args,**kargs):
 def down_block(x, cnum, kernel_init, filter_vec=(3,3,1), maxpool2x=True, 
                kernel_regularizer=None, bias_regularizer=None,
                basic_layer=layer_BN_relu):
-    for n in filter_vec:
-        x = basic_layer(
-                x, Conv2D, cnum, (n,n), 
-                padding='same', kernel_initializer=kernel_init,
-                kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
+    if all(isinstance(x,int) for x in filter_vec):
+        for n in filter_vec:
+            x = basic_layer(
+                    x, Conv2D, cnum, (n,n), 
+                    padding='same', kernel_initializer=kernel_init,
+                    kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
+    else:
+        for n,BN in filter_vec:
+            layer = layer_BN_relu if BN else layer_relu
+            x = layer(
+                    x, Conv2D, cnum, (n,n), 
+                    padding='same', kernel_initializer=kernel_init,
+                    kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
     if maxpool2x:
         pool = MaxPooling2D(pool_size=(2,2))(x)
         return x, pool
@@ -34,11 +42,19 @@ def up_block(from_horizon, upward, cnum, kernel_init, filter_vec=(3,3,1),
                  kernel_regularizer=kernel_regularizer,
                  bias_regularizer=bias_regularizer)(upward)
     merged = concatenate([from_horizon,upward], axis=3)
-    for n in filter_vec:
-        merged = basic_layer(
-            merged, Conv2D, cnum, (n,n), padding='same', 
-            kernel_initializer=kernel_init,
-            kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
+    if all(isinstance(x,int) for x in filter_vec):
+        for n in filter_vec:
+            merged = basic_layer(
+                merged, Conv2D, cnum, (n,n), padding='same', 
+                kernel_initializer=kernel_init,
+                kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
+    else:
+        for n,BN in filter_vec:
+            layer = layer_BN_relu if BN else layer_relu
+            merged = layer(
+                merged, Conv2D, cnum, (n,n), padding='same', 
+                kernel_initializer=kernel_init,
+                kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer)
     return merged
 
 def unet(input_size = (None,None,3), pretrained_weights = None,

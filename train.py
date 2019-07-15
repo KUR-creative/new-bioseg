@@ -281,6 +281,12 @@ def main(experiment_yml_path):
             num_filters=NUM_FILTERS,
             filter_vec=FILTER_VEC,
             basic_layer=my_model.layer_relu)
+    elif MODEL == 'bn_unet': # same as naive_unet
+        model = my_model.unet(
+            num_classes=NUM_CLASSES,
+            num_maxpool=NUM_MAXPOOL,
+            num_filters=NUM_FILTERS,
+            filter_vec=FILTER_VEC)
     else:
         print('not supported model!')
         exit()
