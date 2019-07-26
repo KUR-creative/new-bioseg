@@ -132,6 +132,8 @@ def main(experiment_yml_path):
     else:
         EVAL_TYPE = None
 
+    DROPOUT = config.get('DROPOUT')
+
     assert EXPR_TYPE in ('manga', 'boundary_bioseg', 'bm_bioseg'), EXPR_TYPE
 
     aug,img_aug,mask_aug = None,None,None
@@ -273,20 +275,23 @@ def main(experiment_yml_path):
             num_classes=NUM_CLASSES,
             num_maxpool=NUM_MAXPOOL,
             num_filters=NUM_FILTERS,
-            filter_vec=FILTER_VEC)
+            filter_vec=FILTER_VEC,
+            dropout=DROPOUT)
     elif MODEL == 'no_bn_unet':
         model = my_model.unet(
             num_classes=NUM_CLASSES,
             num_maxpool=NUM_MAXPOOL,
             num_filters=NUM_FILTERS,
             filter_vec=FILTER_VEC,
-            basic_layer=my_model.layer_relu)
+            basic_layer=my_model.layer_relu,
+            dropout=DROPOUT)
     elif MODEL == 'bn_unet': # same as naive_unet
         model = my_model.unet(
             num_classes=NUM_CLASSES,
             num_maxpool=NUM_MAXPOOL,
             num_filters=NUM_FILTERS,
-            filter_vec=FILTER_VEC)
+            filter_vec=FILTER_VEC,
+            dropout=DROPOUT)
     else:
         print('not supported model!')
         exit()
