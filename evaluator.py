@@ -703,6 +703,40 @@ import fp
 from pathlib import Path
 import sys
 if __name__ == '__main__':
+    '''
+    eval_and_save_ultimate(
+        './olds/border_nucleus/border_nucleus_190705_173231/border_nucleus_190705_173231.h5',
+        './olds/border_nucleus/border_nucleus_190705_173231/config_border_nucleus_190705_173231.yml', 
+        './experiments/borderNucleus190704/border_nucleus.yml'
+    )
+    exit()
+    '''
+    dataset_dict_path = './borderNucleus190704/borderNucleus190704.yml'
+    with open(dataset_dict_path,'r') as f:
+        print(dataset_dict_path)
+        dataset_dict = yaml.load(f)
+    origin_map = dataset_dict['origin_map']
+
+    experiment_yml_path = './experiments/borderNucleus190704/border_nucleus.yml'
+    with open(experiment_yml_path,'r') as f:
+        config = yaml.load(f)
+    modulo = 2**(config['NUM_MAXPOOL'])
+
+    model_path = './olds/border_nucleus/border_nucleus_190705_173231/border_nucleus_190705_173231.h5'
+    model = load_model(model_path, compile=False)
+
+    img_paths = file_paths('./eval_data/')
+    imgs = load_imgs(img_paths)
+    for image,name in zip(imgs, file_paths('./eval_data/')):
+        print(name)
+        result = segment(model, image, modulo)
+        decategorized = decategorize(map_max_row(result), origin_map)
+        #cv2.imshow('ma', decategorized)
+        #cv2.imshow('im', image)
+        #cv2.waitKey(0)
+        cv2.imwrite('out_data/' + name, bgr_uint8(decategorized))
+    exit()
+
     eval_and_save_ultimate(
         './test_nucleus_190705_152946/test_nucleus_190705_152946.h5', 
         './borderNucleus190704/borderNucleus190704.yml', 
