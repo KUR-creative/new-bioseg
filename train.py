@@ -1,6 +1,7 @@
 import os
 from os.path import join as pjoin
 import shutil 
+from pathlib import Path
 
 import yaml
 import cv2
@@ -194,12 +195,22 @@ def main(experiment_yml_path):
             print('now: ', DATASET_YML)
             dataset = yaml.load(f)
         origin_map = dataset['origin_map']
+
+        stem = lambda p: Path(p).stem
         train_img_paths  = dataset['train_imgs']
         train_mask_paths = dataset['train_masks']
+        for istem, mstem in zip(map(stem,train_img_paths), map(stem,train_mask_paths)):
+            assert istem == mstem[:len(istem)], '{} != {}'.format(istem, mstem)
+
         valid_img_paths  = dataset['valid_imgs']
         valid_mask_paths = dataset['valid_masks']
+        for istem, mstem in zip(map(stem,valid_img_paths), map(stem,valid_mask_paths)):
+            assert istem == mstem[:len(istem)], '{} != {}'.format(istem, mstem)
+
         test_img_paths   = dataset['test_imgs']
         test_mask_paths  = dataset['test_masks']
+        for istem, mstem in zip(map(stem,test_img_paths), map(stem,test_mask_paths)):
+            assert istem == mstem[:len(istem)], '{} != {}'.format(istem, mstem)
 
     NUM_CLASSES = len(origin_map) 
     print(origin_map)
@@ -301,6 +312,8 @@ def main(experiment_yml_path):
     elif config.get('LOSS') == 'wbce':
         loss = weighted_categorical_crossentropy(weights[:NUM_CLASSES])
     elif config.get('LOSS') == 'jaccard_distance':
+        loss = jaccard_distance(NUM_CLASSES)
+    elif config.get('LOSS') == 'weighted_jaccard_distance':
         loss = jaccard_distance(NUM_CLASSES)
 
     model.compile(

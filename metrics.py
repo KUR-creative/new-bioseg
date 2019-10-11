@@ -33,11 +33,11 @@ def jaccard_distance(n_channels, weights=None, smooth=1.):
     import numbers
     assert isinstance(smooth, numbers.Number)
 
-    if isinstance(weights, list): 
+    if weights is None: 
+        weights = np.ones( (1,1,n_channels) )
+    else:
         assert len(weights) == n_channels
         weights = np.array(weights)
-    else:
-        weights = np.ones( (1,1,n_channels) )
 
     axis = tuple(range(n_channels))
     def jacc_dist(y_true, y_pred):
