@@ -24,19 +24,67 @@ def jaccard_coefficient(y_true, y_pred, smooth=100, weight1=1.):
     jac = (intersection + smooth) / (sum_ - intersection + smooth)
     return jac
 
-def jaccard_distance(n_channels, smooth=1):
+def jaccard_distance(n_channels, weights=None, smooth=1.):
     ''' 
     Cacluate channel by channel intersection & union.
     And then calculate smoothed jaccard_coefficient.
     Finally, calculate jaccard_distance.
     '''
+    import numbers
+    assert isinstance(smooth, numbers.Number)
+
+    if isinstance(weights, list): 
+        assert len(weights) == n_channels
+        weights = np.array(weights)
+    else:
+        weights = np.ones( (1,1,n_channels) )
+
     axis = tuple(range(n_channels))
     def jacc_dist(y_true, y_pred):
+        y_true = y_true * weights
+        y_pred = y_pred * weights
+
         intersection = y_pred * y_true
         sum_ = y_pred + y_true
         numerator = K.sum(intersection, axis) + smooth
         denominator = K.sum(sum_ - intersection, axis) + smooth
         jacc =  K.mean(numerator / denominator)
+        return 1-jacc
+    return jacc_dist
+
+def np_jaccard_distance(n_channels, weights=None, smooth=1.):
+    import numbers
+    assert isinstance(smooth, numbers.Number)
+
+    if isinstance(weights, list): 
+        assert len(weights) == n_channels
+        weights = np.array(weights)
+    else:
+        weights = np.ones( (1,1,n_channels) )
+
+    axis = tuple(range(n_channels))
+    def jacc_dist(y_true, y_pred):
+        y_true = y_true * weights
+        y_pred = y_pred * weights
+        '''
+        print('---- y true ----')
+        print(y_true)
+        print('---- y pred ----')
+        print(y_pred)
+        print('----------------')
+
+        print('---- y true ----')
+        print(y_true)
+        print('---- y pred ----')
+        print(y_pred)
+        print('----------------')
+        '''
+
+        intersection = y_pred * y_true
+        sum_ = y_pred + y_true
+        numerator = np.sum(intersection, axis) + smooth
+        denominator = np.sum(sum_ - intersection, axis) + smooth
+        jacc = np.mean(numerator / denominator)
         return 1-jacc
     return jacc_dist
 '''
@@ -72,6 +120,7 @@ def weighted_categorical_crossentropy(weights):
 
 def jacc(y_pred,y_true, smooth=0.000001):
     axis = tuple(range(len(y_pred.shape)))
+    print(axis, y_pred.shape)
     intersection = y_pred * y_true
     #print('i\n',intersection)
     sum_ = y_pred + y_true
@@ -135,6 +184,12 @@ if __name__ == '__main__':
         [0,0,0,0,0,0],
     ]) 
 
+    a = np.array([
+        [[1,0,0],[1,0,0],[1,0,0]],
+        [[0,1,0],[0,1,0],[0,1,0]],
+        [[1,0,0],[1,0,0],[1,0,0]],
+        [[1,0,0],[1,0,0],[1,0,0]],
+    ]) 
     b = np.array([
         [[1,0],[1,0],[1,0]],
         [[1,0],[1,0],[1,0]],
@@ -148,7 +203,29 @@ if __name__ == '__main__':
         [[1,0],[1,0],[1,0]],
     ]) 
 
-    b = c.copy()
+    v = np.array([
+        [[1,0,0],[1,0,0],[1,0,0]],
+        [[0,1,0],[0,1,0],[0,1,0]],
+        [[1,0,0],[1,0,1],[0,0,1]],
+        [[1,0,0],[1,0,0],[1,0,0]],
+    ]) 
+    print( v * np.array([[[3,4,5]]]) )
+    #print(np.array([[[3,4,5]]]).shape )
+    #exit()
     print('jacc:', jacc(b,c))
-    #print('j sum',np.sum(j,axis=(0,1)))
+    print('jacc:', jacc(b,c))
+
+    import tensorflow as tf
+    target = b
+    j = jaccard_distance(target.shape[-1], [4,3])
+    with tf.Session() as sess: 
+        K.set_session(sess)
+        i1 = tf.placeholder(tf.float32, shape=(None,None,target.shape[-1]))
+        i2 = tf.placeholder(tf.float32, shape=(None,None,target.shape[-1]))
+        model = j(i1,i2)
+        print(sess.run(model, feed_dict={i1:b, i2:c}))
+
+    wj = np_jaccard_distance(2,[4,3])
+    print('------- w -------')
+    print(wj(b,c))
 
