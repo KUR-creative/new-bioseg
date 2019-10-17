@@ -84,19 +84,14 @@ def batch_gen(imgs, masks, batch_size,
 
         yield img_batch, mask_batch
 
-def bgr_weights(masks):
-    n_all, n_bgr = 0, [0,0,0]
-    for mask in masks:
-        class_map = np.argmax(mask, axis=-1)
-        classes,counts = np.unique(class_map,return_counts=True)
-        for color,count in zip(classes,counts):
-            n_bgr[color] += count
-        n_all += sum(n_bgr)
-    w_b = n_all / n_bgr[0]
-    w_g = n_all / n_bgr[1]
-    w_r = n_all / n_bgr[2]
-    return w_b,w_g,w_r
-
+def weights(mask):
+    ''' all1s / channel1s. So, lesser 1s, bigger weight. '''
+    channels = cv2.split(mask)
+    all1s = np.sum(mask)
+    ws = []
+    for ch in channels:
+        ws.append(all1s / np.sum(ch))
+    return np.array(ws)
 
 def main(experiment_yml_path):
     start_time = now_time_str()
@@ -314,7 +309,11 @@ def main(experiment_yml_path):
     elif config.get('LOSS') == 'jaccard_distance':
         loss = jaccard_distance(NUM_CLASSES)
     elif config.get('LOSS') == 'weighted_jaccard_distance':
-        loss = jaccard_distance(NUM_CLASSES)
+        # masks are already categorized.
+        all_weights = sum(map(
+            weights, train_masks + valid_masks + test_masks
+        ))
+        loss = jaccard_distance(NUM_CLASSES, all_weights)
 
     model.compile(
         optimizer=OPTIMIZER,

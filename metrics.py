@@ -132,6 +132,15 @@ def jacc(y_pred,y_true, smooth=0.000001):
     jac =  np.mean(numerator / denominator)
     return 1-jac
 
+def weights(mask):
+    ''' all1s / channel1s. So, lesser 1s, bigger weight. '''
+    channels = cv2.split(p)
+    all1s = np.sum(p)
+    ws = []
+    for ch in channels:
+        ws.append(all1s / np.sum(ch))
+    return np.array(ws)
+
 import numpy as np
 import cv2
 if __name__ == '__main__':
@@ -141,10 +150,28 @@ if __name__ == '__main__':
         [[0,1],[0,1],[0,1]],
     ]) 
     p = np.array([
-        [[1,0,0],[1,0,0],[1,0,0]],
-        [[1,0,0],[1,0,0],[1,0,0]],
-        [[0,1,0],[0,1,0],[0,1,0]],
+        [[1,0,1,0,0],[1,0,1,0,0],[1,0,0,0,0]],
+        [[1,0,1,0,1],[1,0,1,0,1],[1,0,0,1,1]],
+        [[0,1,0,1,0],[0,1,0,1,0],[0,1,1,0,0]],
+        [[0,1,0,1,0],[0,1,0,1,0],[0,1,1,0,0]],
     ]) 
+    p2 = np.copy(p)
+    p3 = np.copy(p)
+
+    arr = [p,p2,p3]
+
+    from functools import reduce
+    print( list( map(weights, arr)) )
+    print( sum(map(weights, arr)) )
+    exit()
+
+    '''
+    channels = cv2.split(p)
+    all1s = np.sum(p)
+    for ch in channels:
+        print( all1s / np.sum(ch) )
+    '''
+
     t = np.array([
         [[1,0,0],[1,0,0],[1,0,0]],
         [[0,1,0],[0,1,0],[0,1,0]],
