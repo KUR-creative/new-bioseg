@@ -142,7 +142,7 @@ def map_colors(img, dst_src_colormap):
     # ... TODO: refactor it!!!
     return ret_img
 
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 def categorize_with(img, origin_map):
     colors = np.unique(img.reshape(-1,img.shape[2]), axis=0)
     #print(colors, origin_map)

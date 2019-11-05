@@ -1,5 +1,13 @@
-from keras.models import *
-from keras.layers import *
+from tensorflow.keras.models import *
+from tensorflow.keras.layers import *
+
+'''
+import inspect
+import tensorflow.keras
+print('wtf?', tensorflow.keras.__version__)
+print(dir(Model))
+print(inspect.getfullargspec(Model))
+'''
 
 def layer_BN_relu(input,layer_fn,*args,**kargs):
     x = layer_fn(*args,**kargs)(input)
@@ -104,7 +112,7 @@ def unet(input_size = (None,None,3), pretrained_weights = None,
     out = Conv2D(out_channels, (1,1), padding='same',
                  kernel_initializer=kernel_init, activation = last_activation)(x)
 
-    model = Model(input=inp, output=out)
+    model = Model(inputs=inp, outputs=out)
 
     if(pretrained_weights):
     	model.load_weights(pretrained_weights)

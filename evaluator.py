@@ -230,7 +230,7 @@ def eval_advanced_metric(model, img, ans, origin_map, modulo=32):
     f1_v2, dice_obj = advanced_metric(ans, gray)
     return decategorized, f1_v2, dice_obj
 
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 import yaml
 import os
 def eval_and_save(model_path, dataset_dict_path, experiment_yml_path,

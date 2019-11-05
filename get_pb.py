@@ -1,8 +1,8 @@
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 
 import tensorflow as tf
 import keras.backend as K
-from keras.models import Model
+from tensorflow.keras.models import Model
 from tensorflow.python.framework import graph_util
 from tensorflow.python.framework import graph_io
 from tensorflow.python.tools.freeze_graph import freeze_graph_with_def_protos

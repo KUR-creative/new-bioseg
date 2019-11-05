@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from imgaug import augmenters as iaa
 from itertools import cycle, islice
-from keras.callbacks import ModelCheckpoint, TensorBoard, ReduceLROnPlateau
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard, ReduceLROnPlateau
 
 from utils import human_sorted, splited_paths, file_paths, filename_ext
 from utils import ElapsedTimer, now_time_str
@@ -334,7 +334,7 @@ def main(experiment_yml_path):
     shutil.copyfile(experiment_yml_path, 
                     pjoin(result_dir, 'config_'+model_name+'.yml'))
 
-    from keras.utils import plot_model
+    from tensorflow.keras.utils import plot_model
     plot_model(model, to_file=pjoin(result_dir,model_name+'.png'), 
                show_shapes=True)
 

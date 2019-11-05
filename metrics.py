@@ -1,4 +1,4 @@
-from keras import backend as K
+from tensorflow.keras import backend as K
 #https://stackoverflow.com/questions/45947351/how-to-use-tensorflow-metrics-in-keras
 # IOU metric: https://www.pyimagesearch.com/wp-content/uploads/2016/09/iou_equation.png
 import functools
@@ -93,7 +93,7 @@ This lets you apply a weight to unbalanced classes.
 @url: https://gist.github.com/wassname/ce364fddfc8a025bfab4348cf5de852d
 @author: wassname
 '''
-from keras import backend as K
+from tensorflow.keras import backend as K
 def weighted_categorical_crossentropy(weights):
     '''
     A weighted version of keras.objectives.categorical_crossentropy
