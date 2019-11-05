@@ -89,8 +89,10 @@ def weights(mask):
     channels = cv2.split(mask)
     all1s = np.sum(mask)
     ws = []
-    for ch in channels:
-        ws.append(all1s / np.sum(ch))
+    for channel in channels:
+        ch_sum = np.sum(channel)
+        weight = (all1s / ch_sum) if ch_sum != 0 else 0
+        ws.append( weight )
     return np.array(ws)
 
 def main(experiment_yml_path):
@@ -313,6 +315,7 @@ def main(experiment_yml_path):
         all_weights = sum(map(
             weights, train_masks + valid_masks + test_masks
         ))
+        print(all_weights)
         loss = jaccard_distance(NUM_CLASSES, all_weights)
 
     model.compile(
